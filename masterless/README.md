@@ -1,6 +1,8 @@
-################################################################
-#(@) Joe DeCello, 2012
-################################################################
+##############################################################################
+#(@) Joe DeCello, 2014
+##############################################################################
+# 2011 - wrote first version to for client to deploy apps on appliances
+# 2014 - updated for hiera
 
 There are two very clear use cases for this wrapper script:
 1. You want to test your puppet code from ./ without publishing to master
@@ -11,9 +13,9 @@ really complicated here.  Basically you can run puppet apply with a bunch of
 options such that ./ is your puppetmaster with ZERO code changes to your 
 manifests.   Just run puppet using the wrapper script.   
 
-Requirements, following the diretory structure here, you simple need:
-./scripts/masterless-wrapper.sh
-./scripts/fileserver.conf
+Requirements, following the directory structure here, you simply need:
+ ./scripts/masterless-wrapper.sh
+ ./scripts/fileserver.conf
 
 The fileserver.conf simply makes ./ the provider for puppet:/// in your source
 and template defitions.   It works beautifully and I have used this for years

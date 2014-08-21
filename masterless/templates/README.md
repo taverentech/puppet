@@ -1,5 +1,4 @@
 ################################################################
-#(@) Joe DeCello, 2012
+#(@) Joe DeCello, 2014
 ################################################################
-
-just placeholder
+templates is standard top-level dir, yet I do not use it for masterless
