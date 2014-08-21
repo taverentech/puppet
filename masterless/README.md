@@ -2,7 +2,7 @@
 #(@) Joe DeCello, 2014
 ##############################################################################
 # 2011 - wrote first version to for client to deploy apps on appliances
-# 2014 - updated for hiera
+# 2014 - updated for masterless architecture and hiera
 
 There are two very clear use cases for this wrapper script:
 1. You want to test your puppet code from ./ without publishing to master
