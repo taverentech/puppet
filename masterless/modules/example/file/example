@@ -1,0 +1,2 @@
+This is just an example of a file that would normally be pulled from puppet
+master, yet now it is pulled from ./ without any manifest changes.

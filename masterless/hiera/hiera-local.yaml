@@ -1,0 +1,17 @@
+#THIS FILE USED or MASTERLESS PUPPET - see datadir setting
+:backends:
+ - yaml
+ - puppet
+
+:logger: console
+
+:hierarchy:
+  - "fqdn/%{::fqdn}"                            # fqdn/fqdn.yaml
+  - "operatingsystem/%{::osfamily}/%{::lsbmajdistrelease}" #  RedHat v6 vs v7
+  - "operatingsystem/%{::osfamily}/%{::lsbdistcodename}" # Debian/trusty.yaml, etc
+  - "operatingsystem/%{::osfamily}/common" # Debian/common.yaml,RedHat/common.yaml
+  - "common"				# Global defaults
+
+:yaml:
+   :datadir: ./hiera
+
