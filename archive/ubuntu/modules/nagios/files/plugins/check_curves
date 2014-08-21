@@ -1,0 +1,264 @@
+#! /usr/bin/perl -wT
+
+use strict;
+use lib "/usr/local/nagios/libexec" ;
+use utils qw($TIMEOUT %ERRORS &print_revision &support);
+use vars qw($PROGNAME $PROGVER);
+use Getopt::Long;
+use DBI;
+use vars qw($opt_V $opt_h $relative $opt_w $opt_c $opt_H $opt_g $opt_n $query $debug);
+my ($start, $oldStart);
+my ($sth, $rv, $results);
+use Data::Dumper::Simple;
+
+my $default_warn = 1.5;
+my $default_crit = 3.0;
+my $interval = 300;
+my $duration = 3600;
+my $alertMetric;
+my $default_metric;
+my $andErrors = "";
+my $previous = 0;
+my $debug = 0;
+
+my $config = {
+	"bp-conc" => {
+		"hsm"		=> "bp-fb-stats::Battle Pirates Current Users::usercount",
+		"warning"	=> [ 0.4, -0.2 ],
+		"critical"	=> [ 0.5, -0.3 ],
+	},
+	"wc-conc" => {
+		"hsm"		=> "wc-fb-stats::War Commander Current Users::usercount",
+		"warning"	=> [ 0.2, -0.1 ],
+		"critical"	=> [ 0.35, -0.2 ],
+	},
+	"bym-conc" => {
+		"hsm"		=> "bym-fb-stats::Backyard Monsters Current Users::usercount",
+		"warning"	=> [ 0.5, -0.4 ],
+		"critical"	=> [ 0.6, -0.5 ],
+	},
+};
+
+$PROGNAME = "check_curves";
+$PROGVER = "1.0.0";
+sub print_help ();
+sub print_usage ();
+
+$ENV{'PATH'}='';
+$ENV{'BASH_ENV'}='';
+$ENV{'ENV'}='';
+
+Getopt::Long::Configure('bundling');
+GetOptions
+	("V"   => \$opt_V, "version"    => \$opt_V,
+	 "h"   => \$opt_h, "help"       => \$opt_h,
+	 "v" => \$debug, "verbose"  => \$debug,
+	 "p=i" => \$previous, "previous=i"  => \$previous,
+	 "g=s@" => \$opt_g, "graph=s" => \$opt_g,
+);
+
+sub critical($) {
+	my $string = shift;
+	chomp($string);
+	print "CRITICAL: $string\n";
+	exit $ERRORS{'CRITICAL'};
+}
+
+sub warning($) {
+	my $string = shift;
+	chomp($string);
+	print "WARNING: $string\n";;
+	exit $ERRORS{'WARNING'}
+}
+
+sub ok($) {
+	my $string = shift;
+	chomp($string);
+	print "OK: $string\n";
+	exit $ERRORS{'OK'};
+}
+
+if ($opt_V) {
+	print_revision($PROGNAME,$PROGVER); #'
+	exit $ERRORS{'OK'};
+}
+
+if ($opt_h) {
+	print_help();
+	exit $ERRORS{'OK'};
+}
+
+sub do_untaint($) {
+	my $v = shift;
+	unless ($v =~ m/^([a-zA-Z0-9_-]+)$/) { #allow filename to be [a-zA-Z0-9_]
+		die("Tainted");
+	}
+	return $1;
+}
+
+$previous = do_untaint($previous);
+
+if ($previous) {
+	$start = $previous;
+} else {
+	$start = time;
+}
+
+$oldStart = $start - (60*60*24*7);
+print "start: ${start}\noldStart: ${oldStart}\n" if($debug>1);
+
+if($opt_g) {
+	foreach my $graph (@{$opt_g}) {
+		unless (exists $config->{$graph}) {
+			print "UNKNOWN: Unknown graph: $graph\n";
+			exit $ERRORS{'UNKNOWN'}
+		}
+	}
+	foreach my $graph (@{$opt_g}) {
+		my @now;
+		my @then;
+		my $lastTime = undef;
+		my $lastVal = undef;
+		my $nowAvg;
+		my $thenAvg;
+		my $totalslope = 0;
+		my $entries = 0;
+		my $graphName = $config->{$graph}->{"hsm"};
+		while(scalar @now == 0 or $now[0] eq "0") {
+			print "/usr/local/nagios/libexec/opsview-cli -m array -d ${duration} -o +${start} \"${graphName}\"\n" if($debug>0);
+			@now = `/usr/local/nagios/libexec/opsview-cli -m array -d ${duration} -o +${start} "${graphName}"`;
+			sleep 5 unless(scalar @now > 0);
+		}
+		while(scalar @then == 0 or $then[0] eq "0") {
+			print "/usr/local/nagios/libexec/opsview-cli -m array -d ${duration} -o +${oldStart} \"${graphName}\"\n" if($debug>0);
+			@then = `/usr/local/nagios/libexec/opsview-cli -m array -d ${duration} -o +${oldStart} "${graphName}"`;
+			sleep 5 unless(scalar @now > 0);
+		}
+		my $min = undef;
+		my $max = 0;
+		my $nowRange = 0;
+		my $thenRange = 0;
+		foreach my $line (@now) {
+			my $ut;
+			my $v;
+			my $slope = 0;
+			($ut, $v) = split(/,/, $line);
+			($v>$max) and ($max=$v);
+			(!defined $min or $v<$min) and ($min=$v);
+			unless (defined $lastTime) {
+				$lastTime = $ut;
+				$lastVal = $v;
+				next;
+			}
+			my $diffTime = $ut - $lastTime;
+			my $diffVal = $v - $lastVal;
+			$lastTime = $ut;
+			$lastVal = $v;
+			$slope = $diffVal / $diffTime;
+			printf("NOW: %s = %0.4f, %0.6f\n", $ut, $v, $slope) if($debug>1);
+			$totalslope+=$slope;
+			$entries++;
+		}
+		$nowRange = $max-$min;
+		$nowAvg = $totalslope / $entries;
+		printf("now: %0.6f (%d entries)\n", $nowAvg, $entries) if($debug>0);
+
+		$totalslope = 0;
+		$entries = 0;
+		$min = undef;
+		$max = 0;
+		foreach my $line (@then) {
+			my $ut;
+			my $v;
+			my $slope = 0;
+			($ut,$v) = split(/,/, $line);
+			($v>$max) and ($max=$v);
+			(!defined $min or $v<$min) and ($min=$v);
+			unless (defined $lastTime) {
+				$lastTime = $ut;
+				$lastVal = $v;
+				next;
+			}
+			my $diffTime = $ut - $lastTime;
+			my $diffVal = $v - $lastVal;
+			$lastTime = $ut;
+			$lastVal = $v;
+			$slope = $diffVal / $diffTime;
+			printf("THN: %s = %0.4f, %0.6f\n", $ut, $v, $slope) if($debug>1);
+			$totalslope+=$slope;
+			$entries++;
+		}
+		$thenRange=$max-$min;
+		$thenAvg = $totalslope / $entries;
+		printf("thn: %0.6f (%d entries)\n", $thenAvg, $entries) if($debug>0);
+		printf("nowRange: %0.4f\nthenRange: %0.4f\n", $nowRange, $thenRange) if($debug>0);
+		my $ratio = $nowRange/$thenRange;
+		printf("ratio: %0.6f\n", $ratio) if($debug>0);
+		$results->{$graph} = $nowAvg-($thenAvg*$ratio);
+		printf("   result: %0.6f\nnow: %0.6f\nthen-adj: %0.6f\n", $results->{$graph}, $nowAvg, ($thenAvg*$ratio)) if($debug>1);
+		printf("unadj-res: %2.6f\n", $nowAvg-$thenAvg) if($debug>1);
+	}
+} else {
+	print_usage();
+	exit $ERRORS{'OK'};
+}
+
+my $exitStatus = "OK";
+my @okStatusString = ();
+my @badStatusString = ();
+foreach my $graph (@{$opt_g}) {
+	my @warns = @{$config->{$graph}->{"warning"}};
+	my @crits = @{$config->{$graph}->{"critical"}};
+	my $flag = 0;
+	$graph = do_untaint($graph);
+	# Just in case we give them in the wrong order in the config...
+	foreach my $comp (@crits) {
+		if (($comp>0 and $results->{$graph}>$comp) or ($comp<0 and $results->{$graph}<$comp)) {
+			$exitStatus = "CRITICAL";
+			push(@badStatusString, sprintf("$graph %s critical", ($comp>0)?"gain":"loss"));
+			$flag = 1;
+		}
+	}
+	next if($flag);
+	foreach my $comp (@warns) {
+		if (($comp>0 and $results->{$graph}>$comp) or ($comp<0 and $results->{$graph}<$comp)) {
+			$exitStatus = ($exitStatus eq "CRITICAL")?$exitStatus:"WARNING";
+			push(@badStatusString, sprintf("$graph %s warning", ($comp>0)?"gain":"loss"));
+			$flag = 1;
+		}
+	}
+	unless($flag) {
+		push(@okStatusString, sprintf("$graph ok"));
+	}
+}
+#print Dumper($results);
+my $perfdata = join " ", map { sprintf("%s-dev=%0.4f", $_, $results->{$_}) } keys(%${results});
+#my $perfdata = join " ", map { $_."=".$results->{$_}." ".$_."aspercent=".sprintf("%0.2f", $percents->{$_})  } sort { ($a =~ /^unique/)?(1):($a cmp $b) } keys(%{$results});
+
+my $string;
+my $_bad = (scalar @badStatusString > 0)?join (", ", @badStatusString):"";
+my $_good = (scalar @okStatusString > 0)?join (", ", @okStatusString):"";
+if($_bad ne "" and $_good ne "") {
+	$string = join(" / ", $_bad, $_good);
+} else {
+	$string = $_bad . $_good;
+}
+printf("%s: %s|%s\n", $exitStatus, $string, $perfdata);
+exit $ERRORS{$exitStatus};
+#print Dumper($perfdata);
+
+sub print_usage () {
+	print "Usage: $PROGNAME -g <game> [-w <warn>] [-c <crit>] [-k <searchkey>]\n";
+}
+
+sub print_help () {
+	print_revision($PROGNAME,$PROGVER);
+	print "Copyright (c) 2012 Jason Legate/example\n";
+	print "\n";
+	print_usage();
+	print "\n";
+	print "<warn> = Percentage at which a warning message will be generated.\n";
+	print "<crit> = Percentage at which a critical message will be generated.\n";
+	print "<searchkey> = Key to search the logs for (ex. '%http%')\n";
+	support();
+}

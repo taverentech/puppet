@@ -1,0 +1,2 @@
+Defaults:backuppc	!requiretty
+backuppc ALL = NOPASSWD : /usr/bin/nice -n 10 /usr/bin/rsync *

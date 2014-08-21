@@ -1,0 +1,5 @@
+#######################
+## Created by Puppet ##
+#######################
+# Cloudera
+deb [arch=amd64] http://kickstart.iad1.prod.example1.com/clouderah4/ precise-cdh4.6.0 contrib

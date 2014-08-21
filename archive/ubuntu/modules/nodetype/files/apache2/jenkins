@@ -1,0 +1,22 @@
+<VirtualHost *:80>
+	ServerAdmin webmaster@localhost
+	ServerName build-ubuntu1.sjc.example.com
+	ServerAlias build.sjc.example.com
+	ProxyRequests Off
+	<Proxy *>
+		Order deny,allow
+		Allow from all
+	</Proxy>
+	ProxyPreserveHost on
+	ProxyPass / http://localhost:8080/
+
+#  <Location />
+#      AuthType Basic
+#      AuthName "example CI"
+#      AuthUserFile  /etc/apache2/ci.htpasswd
+#      Require valid-user
+#      Options +FollowSymLinks +indexes
+#      IndexOptions +FancyIndexing
+#  </Location>
+
+</VirtualHost>

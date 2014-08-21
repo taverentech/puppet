@@ -1,0 +1,78 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+usage1="$0 -t [memory,users,sockets,facebook,memcache,mongo]"
+
+if [ ! $1 ]; then
+	echo $usage1;
+	exit $STATE_UNKNOWN
+fi
+
+while test -n "$1"; do
+    case "$1" in
+        -h)
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+	-t)
+	    type=`echo $2 | tr '[:upper:]' '[:lower:]'`
+	    shift
+	    ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+data=`node /opt/ex/exp-node/opsview.js --env=prod 2> /dev/null`
+
+function addcounter() {
+		for i in $MYLD; do
+			if [ `echo $i | grep -c Count` -ne 0 ]; then
+				i="${i}c"
+			fi
+		A="${A}${i} "
+		done
+}
+
+case "$type" in
+	memory)
+		echo $data | sed -r -e 's/node.-(users|backendSockets|fbCount|fbLatency|memcachedCount|memcachedLatency|mongodbCount|mongodbLatency)=[0-9]{0,20} //g'
+	;;
+	users)
+		echo $data | sed -r -e 's/node.-(rss|heapUsed|heapTotal|backendSockets|free|total|fbCount|fbLatency|memcachedCount|memcachedLatency|mongodbCount|mongodbLatency)=[0-9]{0,20} //g'
+	;;
+	sockets)
+		echo $data | sed -r -e 's/node.-(rss|heapUsed|heapTotal|users|free|total|fbCount|fbLatency|memcachedCount|memcachedLatency|mongodbCount|mongodbLatency)=[0-9]{0,20} //g'
+	;;
+	facebook)
+		A="`echo $data | sed -r -e 's/\|.*//g'`|"
+		MYLD=`echo $data | sed -r -e 's/.*\|//g' -e 's/node.-(rss|heapUsed|heapTotal|users|backendSockets|free|total|memcachedCount|memcachedLatency|mongodbCount|mongodbLatency)=[0-9]{0,20} //g'`
+		addcounter
+		echo $A
+	;;
+	memcache)
+		A="`echo $data | sed -r -e 's/\|.*//g'`|"
+		MYLD=`echo $data | sed -r -e 's/.*\|//g' -e 's/node.-(rss|heapUsed|heapTotal|users|backendSockets|free|total|fbCount|fbLatency|mongodbCount|mongodbLatency)=[0-9]{0,20} //g'`
+		addcounter
+		echo $A
+	;;
+	mongo)
+		A="`echo $data | sed -r -e 's/\|.*//g'`|"
+		MYLD=`echo $data | sed -r -e 's/.*\|//g' -e 's/node.-(rss|heapUsed|heapTotal|users|backendSockets|free|total|fbCount|fbLatency|memcachedCount|memcachedLatency)=[0-9]{0,20} //g'`
+		addcounter
+		echo $A
+	;;
+	*)
+		echo "Unknown argument: $1"
+		echo $usage1;
+		exit $STATE_UNKNOWN
+	;;
+
+esac

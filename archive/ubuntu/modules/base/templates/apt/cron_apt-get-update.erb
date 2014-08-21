@@ -1,0 +1,8 @@
+#######################
+## Managed by Puppet ##
+#######################
+# Set path
+PATH=/usr/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin
+
+# Run every hour using offset based off 4th octet of IP/8.25 plus 5min
+<%= @apt_cron_offset %> * * * * root apt-get update > /dev/null 2>&1

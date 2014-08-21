@@ -1,0 +1,9 @@
+#!/bin/bash
+
+OUTDIR=$(mktemp -d)
+
+RUNTIME=$((/usr/bin/time --format "%e" svn co  --username=redmine --password=gasmiz5naxke --no-auth-cache --non-interactive --trust-server-cert https://casualcollective.svn.beanstalkapp.com/debug-log/ ${OUTDIR}) 2>&1 | tail -n1)
+
+rm -rf ${OUTDIR}
+
+echo "OK: svn co took ${RUNTIME}s|time=${RUNTIME}"

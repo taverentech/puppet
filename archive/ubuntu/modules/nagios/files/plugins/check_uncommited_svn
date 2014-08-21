@@ -1,0 +1,40 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+
+SVN="/usr/bin/svn"
+
+if [ $1 ]; then
+	SVNFOLDER=$1
+else
+	echo "$0 [/path/to/target]"
+	exit $STATE_UNKNOWN
+fi
+
+if [ ! -d $SVNFOLDER ]; then
+	echo "ERROR: ${SVNFOLDER} does not exist!"
+	exit $STATE_WARNING
+fi
+
+result=`${SVN} st ${SVNFOLDER} | awk '{print $1}'`
+
+uncommitted=`echo ${result} | grep "\?" -c`
+modified=`echo ${result} | grep "M" -c`
+deleted=`echo ${result} | grep "D" -c`
+added=`echo ${result} | grep "A" -c`
+conflict=`echo ${result} | grep "C" -c`
+merged=`echo ${result} | grep "G" -c`
+updated=`echo ${result} | grep "U" -c`
+updatedplus=`echo ${result} | grep "UU" -c`
+let total=$modified+$deleted+$added+$conflict+$merged+$updated
+
+if [ $total -ne 0 ]; then
+	printf "WARNING: Svn not in sync for $SVNFOLDER, problems=$total|uncommitted=$uncommitted modified=$modified deleted=$deleted added=$added conflict=$conflict merged=$merged updated=$updated total=$total\n"
+	exit $STATE_WARNING
+else
+	printf "OK: Svn for $SVNFOLDER in sync|uncommitted=$uncommitted modified=$modified deleted=$deleted added=$added conflict=$conflict merged=$merged updated=$updated total=$total\n"
+	exit $STATE_OK
+fi

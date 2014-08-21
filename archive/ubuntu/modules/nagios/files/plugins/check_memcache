@@ -1,0 +1,100 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+usage1="$0 -H [hostname]"
+hostname="bym-fb-mc1.dc.i.example.com:11211"
+mytemp=`mktemp`
+thelist="curr_connections
+total_connections
+connection_structures
+cmd_get
+cmd_set
+get_hits
+get_misses
+delete_misses
+delete_hits
+bytes_read
+bytes_written
+limit_maxbytes
+curr_items
+total_items
+evictions"
+
+notes="
+uptime = number of seconds since the process was started
+time = current time
+version = memcached version
+rusage_user = seconds the cpu has devoted to the process as the user
+rusage_system = seconds the cpu has devoted to the process as the system
+curr_items = total number of items currently in memcache
+total_items = total number of items that have passed through the cache
+bytes = total number of bytes currently in use by curr_items
+curr_connections = total number of open connections to memcached
+connection_structures = ???
+cmd_get = total GET commands issued to the server
+cmd_set = total SET commands issued to the server
+get_hits = total number of times a GET command was able to retrieve and return data
+get_misses = total number of times a GET command was unable to retrieve and return data
+bytes_read = total number of bytes input into the server
+bytes_written = total number of bytes written by the server
+limit_maxbytes = total storage bytes available to the server."
+
+function parsedata() {
+
+	return=`cat $mytemp | grep $1 | awk '{ print $3 }'`
+
+	# $1 = mysearchvalue
+#	if [ ! $return ]; then
+#		return=0
+#	fi
+}
+function preparedata() {
+	echo stats | socat  -s -t 1 -T 2 - TCP:$hostname | tr -d '\r' > $mytemp
+	curr_connections="curr_connections=`cat $mytemp | grep curr_connections | awk '{ print $3 }'`"
+	total_connections="total_connections=`cat $mytemp | grep total_connections | awk '{ print $3 }'`"
+	connection_structures="connection_structures=`cat $mytemp | grep connection_structures | awk '{ print $3 }'`"
+	cmd_get="cmd_get=`cat $mytemp | grep cmd_get | awk '{ print $3 }'`"
+	cmd_set="cmd_set=`cat $mytemp | grep cmd_set | awk '{ print $3 }'`"
+	get_hits="get_hits=`cat $mytemp | grep get_hits | awk '{ print $3 }'`"
+	get_misses="get_misses=`cat $mytemp | grep get_misses | awk '{ print $3 }'`"
+	delete_misses="delete_misses=`cat $mytemp | grep delete_misses | awk '{ print $3 }'`"
+	delete_hits="delete_hits=`cat $mytemp | grep delete_hits | awk '{ print $3 }'`"
+	bytes_read="bytes_read=`cat $mytemp | grep bytes_read | awk '{ print $3 }'`"
+	bytes_written="bytes_written=`cat $mytemp | grep bytes_written | awk '{ print $3 }'`"
+	limit_maxbytes="limit_maxbytes=`cat $mytemp | grep limit_maxbytes | awk '{ print $3 }'`"
+	curr_items="curr_items=`cat $mytemp | grep curr_items | awk '{ print $3 }'`"
+	total_items="total_items=`cat $mytemp | grep total_items | awk '{ print $3 }'`"
+	evictions="evictions=`cat $mytemp | grep evictions | awk '{ print $3 }'`"
+
+}
+
+while test -n "$1"; do
+    case "$1" in
+	-H)
+	    hostname=$2
+	    shift
+	    ;;
+        -h)
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+	data=""
+	preparedata
+	rm -rf $mytemp
+	data="$curr_connections $total_connections $connection_structures ${cmd_get}c ${cmd_set}c ${get_hits}c ${get_misses}c ${delete_misses}c ${delete_hits}c ${bytes_read}c ${bytes_written}c ${limit_maxbytes}c $curr_items $total_items ${evictions}c"
+        output="see performance data|$data"
+        status="OK"
+        echo "$status $output"
+        exit $STATE_OK
+

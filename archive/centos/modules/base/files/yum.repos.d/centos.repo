@@ -1,0 +1,5 @@
+[example3-centos]
+name=Packages for Linux CentOS
+baseurl=http://yum.us.example3.net/centos/6
+enabled=1
+gpgcheck=0

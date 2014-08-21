@@ -1,0 +1,180 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+user="root"
+password=`grep ^password /root/.my.cnf |head -1 |awk -F= '{print $2}'`
+mysqlpath=`which mysql`
+exitstatus=$STATE_WARNING #default
+usage1="Usage: $0 -m [run|io|lag] [-w <warn>] [-c <crit>]"
+module=""
+null="NULL"
+crit="none"
+warn="none"
+
+if [ ! -f $mysqlpath ]; then
+	printf "ERROR: mysql binary not in path, exiting."
+	exit 1
+fi
+
+if [ -e /usr/src/scripts/bi/common/mysql.var ]; then
+	. /usr/src/scripts/bi/common/mysql.var
+fi
+
+function check_slave_sql() {
+crit="No"
+ok="Yes"
+
+answer=`$mysqlpath $mysqlopts -e 'show slave status nolock \G' | grep Slave_SQL_Running | cut -f2 -d:`
+
+if [ $answer = $crit ]; then
+	echo "CRITICAL - $host - Slave SQL Running $answer|slavesql=0"
+	exit $STATE_CRITICAL; 
+fi 
+
+if [ $answer = $ok ]; then
+	echo "OK - $host - Slave SQL Running $answer|slavesql=1"
+	exit $STATE_OK; 
+fi
+
+# if null, critical
+if [ $answer = $null ]; then 
+	echo "CRITICAL - $host - Slave SQL Running is answering Null|slavesql=0"
+	exit $STATE_CRITICAL; 
+fi
+
+	exit $STATE_CRITICAL; 
+
+}
+
+function check_slave_io () {
+crit="No"
+ok="Yes"
+
+answer=`$mysqlpath $mysqlopts -e 'show slave status nolock \G' | grep Slave_IO_Running | cut -f2 -d:`
+
+if [ $answer = $crit ]; then
+        echo "CRITICAL - $host - Slave IO Running $answer|slaveio=0"
+        exit $STATE_CRITICAL;
+fi
+
+if [ $answer = $ok ]; then
+        echo "OK - $host - Slave IO Running $answer|slaveio=1"
+        exit $STATE_OK;
+fi
+
+# if null, critical
+if [ $answer = $null ]; then
+        echo "CRITICAL - $host - Slave IO Running is answering Null|slaveio=0"
+        exit $STATE_CRITICAL;
+fi
+
+        exit $STATE_CRITICAL;
+
+}
+
+function check_slave_replication () {
+
+if [ "$crit" == "none" ]; then
+	let crit=60*60
+fi
+if [ "$warn" == "none" ]; then
+	let warn=30*60
+fi
+
+seconds=`$mysqlpath $mysqlopts -e 'show slave status nolock \G' | grep Seconds_Behind_Master | cut -f2 -d: | sed -e 's/ //g'`
+# on the number line, we need to test 6 cases:
+# 0-----w-----c----->
+# 0, 0<lag<w, w, w<lag<c, c, c<lag
+# which we simplify to 
+# lag>=c, w<=lag<c, 0<=lag<warn
+
+
+#w<=lag<c
+if [ $seconds -lt $crit ]; then 
+if [ $seconds -ge $warn ]; then
+echo "WARNING - Slave is $seconds seconds behind|slavelag=$seconds"
+exit $STATE_WARNING;
+fi
+fi
+
+if [ $seconds -ge $crit ]; then
+echo "CRITICAL - Slave is $seconds seconds behind|slavelag=$seconds"
+exit $STATE_CRITICAL;
+fi
+
+# 0<=lag<warn
+if [ $seconds -lt $warn ]; then
+echo "OK - Slave is $seconds seconds behind|slavelag=$seconds"
+exit $STATE_OK;
+fi
+
+# if null, critical
+if [ $seconds = $null ]; then
+echo "CRITICAL - Slave is $seconds seconds behind|slavelag=$seconds"
+exit $STATE_CRITICAL;
+fi
+
+exit $STATE_CRITICAL;
+
+}
+
+while test -n "$1"; do
+    case "$1" in
+        -c)
+            crit=$2
+            shift
+            ;;
+        -w)
+            warn=$2
+            shift
+            ;;
+        -u)
+            user=$2
+            shift
+            ;;
+        -p)
+            pass=$2
+            shift
+            ;;
+	-m)
+	    module=$2
+	    shift
+	    ;;
+        -h)
+            echo $usage1;
+            exit $STATE_UNKNOWN
+	    ;;
+	-H)
+            host=$2
+            shift
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift 
+done
+
+if [ "$module" = "" ]; then 
+	echo $usage1
+	exit 1
+fi
+
+mysqlopts="$mysqlopts -u $user -p$password"
+
+case "$module" in 
+	run)
+	check_slave_sql
+	;;
+	io)
+	check_slave_io
+	;;
+	lag)
+	check_slave_replication
+	;;
+esac

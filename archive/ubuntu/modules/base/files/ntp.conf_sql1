@@ -1,0 +1,14 @@
+#######################
+## Managed by Puppet ##
+#######################
+driftfile /var/lib/ntp/ntp.drift
+
+# Servers
+server 172.16.0.21 iburst
+server 172.16.0.22 iburst
+
+# Restrictions: deny all non-local requests
+restrict -4 default kod nomodify notrap nopeer
+restrict -6 default kod nomodify notrap nopeer
+restrict -4 127.0.0.1
+restrict -6 ::1

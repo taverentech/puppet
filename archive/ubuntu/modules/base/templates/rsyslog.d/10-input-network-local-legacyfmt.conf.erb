@@ -1,0 +1,24 @@
+######################
+## Managed by Puppet #
+######################
+#
+# This configuration file overrides defaults in /etc/rsyslog.conf file.
+# It is necessary to listen at standard syslog ports to accept
+# messages from Java-style and other components
+# which uses syslog network transport to send messages even to local syslog.
+#
+
+# provides UDP syslog reception
+
+$ModLoad imudp
+$UDPServerAddress   <%= @UDPServerAddress %>
+$UDPServerRun       <%= @UDPServerRun %>
+
+#
+# NOTE
+#   This is commented out since the module cannot bind to local-only addres.
+#
+# provides TCP syslog reception
+#$ModLoad imtcp
+#$InputTCPServerRun 514
+#$InputTCPMaxSessions 1024

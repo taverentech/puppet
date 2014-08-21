@@ -1,0 +1,19 @@
+#######################
+## Managed by Puppet ##
+#######################
+
+driftfile /var/lib/ntp/ntp.drift
+
+# Servers
+# tick.usno.navy.mil (Washington DC H-maser)
+#server 192.5.41.40 iburst
+# tock.usnogps.navy.mil (Colorado H-maser)
+#server 204.34.198.41 iburst
+# 2013-10-02 ntp.org
+server pool.ntp.org iburst
+
+# Restrictions: deny all non-local requests
+restrict -4 default kod nomodify notrap nopeer
+restrict -6 default kod nomodify notrap nopeer
+restrict -4 127.0.0.1
+restrict -6 ::1

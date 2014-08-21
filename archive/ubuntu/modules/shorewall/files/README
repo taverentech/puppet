@@ -1,0 +1,7 @@
+1.  Puppet install shorewall default configurations when
+	defaults_installed is missing only
+
+3.  We want to update shorewall rules file based on node type (hostname prefix):
+	rules_hostname.domain.example.com  (this is for special cases only, use RARELY if EVER)
+	rules_hostname.environment  (this is for dev, test mostly and ONLY when diff from stage/prod)
+	rules_nodetype  (this should be default for prod and stage)

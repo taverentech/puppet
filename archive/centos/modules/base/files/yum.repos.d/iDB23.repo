@@ -1,0 +1,5 @@
+[example3-idb23]
+name=CentOS,EPL,Puppet Packages for iDB 2.3
+baseurl=http://yum.us.example3.net/idb23
+enabled=1
+gpgcheck=0

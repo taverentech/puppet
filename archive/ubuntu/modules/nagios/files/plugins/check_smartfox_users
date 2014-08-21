@@ -1,0 +1,53 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+user="reporting"
+pass="m06wxx4%0"
+mysqlpath=`which mysql`
+database="opsview"
+exitstatus=$STATE_WARNING #default
+usage1="Usage: $0 -H hostname"
+host="message4.dc.i.example.com"
+
+
+if [ ! -f $mysqlpath ]; then
+        printf "ERROR: mysql binary not in path, exiting."
+        exit 1
+fi
+
+function check_users () {
+	sql="select val from stats"
+	users=`$mysqlpath -h $host -u opsview -pchatstat $database -N -e "$sql"`
+
+	if [ "$users" == "" ]; then
+		users=0
+	fi
+
+	echo "OK - Usercount: $users|usercount=$users"
+	exit $STATE_OK;
+}
+
+while test -n "$1"; do
+    case "$1" in
+        -h)
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+        -H)
+            host=$2
+            shift
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+check_users
+

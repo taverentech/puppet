@@ -1,0 +1,95 @@
+#!/usr/bin/perl -w
+
+# Nagios plugin to check the current messages waiting in the ActiveMQ queue.
+# Author: Maxim Janssens
+# Company: Synquad BV
+# Website: http://www.synquad.nl
+# Email: maxim@synquad.nl
+
+use strict;
+use Switch;
+use LWP::Simple;
+
+my $address = "localhost";
+my $port = "8161";
+my $page = get "http://$address:$port/admin/xml/queues.jsp" or die "Cannot get XML file: $!\n";;
+my (%args, %queues);
+my %error=('ok'=>0,'warning'=>1,'critical'=>2,'unknown'=>3);
+my ($warninglevel, $criticallevel, $tmp, $evalcount, $switch, $queueselect, $queuevalue);
+my $key = my $value = my $i = my $k = 0;
+my $exitcode = "unknown";
+
+for(my $m = 0; $m <= $#ARGV; $m++){
+	if($ARGV[$m] =~ /^\-/){
+		if($ARGV[$m] eq "-w"||"-c"||"-q"){ 
+			$switch = $ARGV[$m]; 
+			$args{$switch} = (); 
+			if($switch eq "-q"){ $k = 1; }
+ 		} else { &help; }
+	} else {
+		if($switch eq "-q"){ 
+			$args{$switch} = $ARGV[$m]; 
+		} elsif($ARGV[$m] =~ /[0-9]{1,5}/){ 
+			$args{$switch} = $ARGV[$m]; 
+		} else { &help; }
+	}
+}
+
+# main();
+
+$warninglevel = $args{"-w"};
+$criticallevel = $args{"-c"};
+if($k == 1) { $queueselect = $args{"-q"}; }
+&getinfo;
+if($k == 1){
+	foreach my $str (keys %queues){
+		if($queueselect eq $str){ $queuevalue = $queues{$queueselect}; last; }
+		else { next; }
+		}
+
+	if($queuevalue eq ''){ $exitcode = "unknown"; exit $error{"$exitcode"};} 
+	else { &checkstatus($queuevalue,$queueselect); }
+} else {
+	while(($key, $value) = each(%queues)){ &checkstatus($value,$key); }
+}
+
+
+# Subroutines
+
+sub getinfo {
+	my @lines = split ' ', $page;
+	foreach my $line (@lines){
+        	if($line =~ /name/i || $line =~ /size/i){
+                	$line =~ s/^name="//g;
+                	$line =~ s/^size="//g;
+                	$line =~ s/"(>)?$//g;
+                	if($i == 1){
+                        	$queues{$tmp} = $line;
+                        	$i = 0;
+                	}
+                	else{
+                        	$tmp = $line;
+                        	$i++;
+                	}
+        	}
+	}
+}
+
+sub checkstatus {	
+	my $val=shift;
+	my $key=shift;
+	switch($val){
+		case { $val <= $warninglevel }					{ print "OK - $key holding: $val msgs |$key=$val"; $exitcode = "ok" }
+		case { $val > $warninglevel && $val <= $criticallevel }		{ print "WARNING - $key holding: $val msgs |$key=$val"; $exitcode = "warning" }
+		case { $val > $criticallevel }					{ print "CRITICAL - $key holding: $val msgs |$key=$val"; $exitcode = "critical" }
+		else 								{ &help; }
+	}
+}
+
+sub help {
+	print "Usage: activemq_watch -w <warninglevel> -c <criticallevel> (-p <queue>)\n";
+	$exitcode = "unknown";
+	exit $error{"$exitcode"};
+}
+
+exit $error{"$exitcode"};

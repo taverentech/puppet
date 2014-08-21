@@ -1,0 +1,8 @@
+#######################
+## Managed by Puppet ##
+#######################
+# Standard repos for maverick
+deb http://kickstart.iad1.prod.example1.com/ubuntu/ maverick main restricted multiverse universe
+deb http://kickstart.iad1.prod.example1.com/ubuntu/ maverick-updates main restricted multiverse universe
+deb http://kickstart.iad1.prod.example1.com/ubuntu/ maverick-security main restricted multiverse universe
+deb http://kickstart.iad1.prod.example1.com/ubuntu/ maverick-backports main restricted universe multiverse

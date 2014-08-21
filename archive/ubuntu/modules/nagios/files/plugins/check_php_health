@@ -1,0 +1,39 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+
+PHP="X`which php`"
+MYTEMP="/tmp/phpcheck.php"
+
+if [ "$PHP" == "X" ]; then
+	echo "INFO: No php-cli on this server"
+	exit $STATE_OK
+else
+	PHP=`which php`
+fi
+
+if [ -e $MYTEMP ]; then
+	rm -rf $MYTEMP
+fi
+
+cat <<- EOF >> $MYTEMP
+<?php
+phpinfo();
+?>
+EOF
+
+output=`php -l $MYTEMP 2>&1`
+result=`echo $output | wc -l`
+
+rm -rf $MYTEMP
+
+if [ $result -ne 1 ]; then
+	printf "WARNING: PHP config errors detected. $result lines, $output\n"
+	exit $STATE_WARNING
+else
+	printf "OK: PHP reports no config issues.\n"
+	exit $STATE_OK
+fi

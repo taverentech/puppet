@@ -1,0 +1,136 @@
+#!/bin/bash
+
+#set -x
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+conn_cache="/tmp/ipsec_conn_cache"
+max_new=2
+max_active=2
+
+ip=$(ip addr |grep -P 'inet\s+((10\.)|(172\.(1[6789]|2\d|3[01])|(192\.168)))\S+' | awk ' { print $2 } ' | cut -f1 -d'/')
+dq1=$(echo ${ip} | cut -f1 -d'.')
+dq2=$(echo ${ip} | cut -f2 -d'.')
+dq3=$(echo ${ip} | cut -f3 -d'.')
+
+is_rabbithole=$(hostname |grep -cP '^rabbithole\d+')
+
+# If we're a rabbithole, check the inter-datacenter links
+if [ ${is_rabbithole} -gt 0 ]
+then
+	exit_status=${STATE_OK}
+	if [ ! -e ${conn_cache} ]
+	then
+		/usr/bin/touch ${conn_cache}{,.1,.2,.3,.4,.tmp}
+	else
+		/bin/cat > ${conn_cache}.tmp < /dev/null
+	fi
+
+	LIST_OF_CONNS=$(ipsec statusall | awk ' /child: / && ! /intra-/ { gsub(/:/, "", $1); print $1 } ')
+	for conn in ${LIST_OF_CONNS}
+	do
+		export num_conns=0
+		export num_new=0
+
+		CONN_IDS=$(ipsec status ${conn} | awk ' /ESTABLISHED/ { print $1 } ' | sed -e 's/^.*\[//; s/\]://;')
+		ALL_CONN_IDS=$( (echo $CONN_IDS ; /bin/cat ${conn_cache}{,.1,.2,.3}) | sort -nu)
+		for id in ${CONN_IDS}
+		do
+			let num_conns=${num_conns}+1
+			echo ${id} >> ${conn_cache}.tmp
+		done
+		for id in ${ALL_CONN_IDS}
+		do
+			if [ $(grep -c ${id} "${conn_cache}.4") -eq 0 ]
+			then
+				let num_new=${num_new}+1
+			fi
+		done
+		if [ -z "${perfdata}" ]
+		then
+			perfdata="${conn}_active=${num_conns} ${conn}_new=${num_new}"
+		else
+			perfdata="${perfdata} ${conn}_active=${num_conns} ${conn}_new=${num_new}"
+		fi
+		if [ ${num_new} -gt ${max_new} ]
+		then
+			exit_status=${STATE_CRITICAL}
+			exit_message="CRITICAL - Too many new tunnels created (${conn}=${num_new})! (Tunnel IDs: $(cat ${conn_cache}.tmp | sed -e :a -e N -e 's/\n/, /'))"
+		else
+			if [ ${num_conns} -gt ${max_active} ]
+			then
+				if [ $exit_status -lt ${STATE_CRITICAL} ]
+				then
+					exit_status=${STATE_WARNING}
+					if [ -z ${exit_message} ]
+					then
+						exit_message="${exit_message}; WARNING - Number of active connections (${conn}=${num_conns}) is greater than ${max_active}!"
+					else
+						exit_message="WARNING - Number of active connections (${conn}=${num_conns}) is greater than ${max_active}!"
+					fi
+				else
+					exit_message="${exit_message}; WARNING - Number of active connections (${conn}=${num_conns}) is greater than ${max_active}!"
+				fi
+			fi
+		fi
+	done
+	/bin/rm -f ${conn_cache}.4
+	/bin/mv ${conn_cache}{.3,.4}
+	/bin/mv ${conn_cache}{.2,.3}
+	/bin/mv ${conn_cache}{.1,.2}
+	/bin/mv ${conn_cache}{,.1}
+	/bin/mv ${conn_cache}{.tmp,}
+	if [ ${exit_status} -eq ${STATE_OK} ]
+	then
+		exit_message="OK - ipsec inter-datacenter connections seem ok, or this node is inactive"
+	fi
+	echo "${exit_message}|${perfdata}"
+	exit $exit_status
+else
+	# Internap
+	case ${dq1} in
+		10)
+			case ${dq2} in
+				5[245])
+					TO_CHECK="intra-sjc"
+					;;
+				2[45]|32|56)
+					TO_CHECK="intra-dc"
+					;;
+			esac
+			;;
+		192)
+			TO_CHECK="intra-sjc2"
+			;;
+	esac
+	
+	STATE=$(sudo ipsec status ${TO_CHECK} | grep -c "INSTALLED")
+	NUM=$(sudo ipsec status | grep -c "INSTALLED")
+	
+	if [ ${STATE} = 1 ]
+	then
+		echo "OK - Tunnel for intra-datacenter connectivity is up"
+		exit ${STATE_OK}
+	fi
+
+	if [ ${STATE} -gt 1 ]
+	then
+		if [ ${STATE} -lt 4 ]
+		then
+			echo "OK - extra tunnels, but installed"
+			exit ${STATE_OK}
+		fi
+		echo "WARNING - Too many extra tunnels"
+		exit ${STATE_WARNING}
+	fi
+	
+	if [ ${STATE} = 0 ]
+	then
+		echo "CRITICAL - Tunnel for intra-datacenter connectivity is down"
+		exit ${STATE_CRITICAL}
+	fi
+	echo "UNKNOWN - Unknown return from ipsec status ${TO_CHECK}"
+	exit ${STATE_UNKNOWN}
+fi

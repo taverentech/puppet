@@ -1,0 +1,7 @@
+##############################################################################
+#                        Managed by Pupppet                                  #
+#                         do not edit by Hand!                               #
+##############################################################################
+\fbpaymentparser
+/var/admin/Mail/Facebook/incoming/
+"|/usr/bin/php /opt/cc/admintools/php/Mail/Main.php"

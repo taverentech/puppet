@@ -1,0 +1,124 @@
+global
+	log 127.0.0.1		local0	info
+	log 10.54.48.15		local0	info
+	maxconn			50000
+	user			haproxy
+	group			haproxy
+	daemon
+	nbproc			7
+
+defaults
+	log			global
+	mode			tcp
+	balance			leastconn
+	option			dontlognull
+	retries			3
+	option			redispatch
+	maxconn			50000
+	contimeout		5000
+	clitimeout		50000
+	srvtimeout		50000
+
+frontend wc-fb-gsvip1-80
+	bind			50.23.65.250:80
+	option			log-separate-errors
+	maxconn			30000
+	default_backend		wc-fb-gsbe-2080
+
+frontend wc-fb-gsvip1-8080
+	bind			50.23.65.250:8080
+	option			log-separate-errors
+	maxconn			30000
+	default_backend		wc-fb-gsbe-2080
+
+frontend wc-fb-gsvip1-8000
+	bind			50.23.65.250:8000
+	option			log-separate-errors
+	maxconn			30000
+	default_backend		wc-fb-gsbe-2080
+
+frontend wc-fb-gsvip1-50000
+	bind			50.23.65.250:50000
+	option			log-separate-errors
+	maxconn			30000
+	default_backend		wc-fb-gsbe-2080
+
+frontend wc-fb-gsvip1-53
+	bind			50.23.65.250:53
+	option			log-separate-errors
+	maxconn			30000
+	default_backend		wc-fb-gsbe-2080
+
+frontend wc-fb-gsvip1-443
+	bind			50.23.65.250:443
+	option			log-separate-errors
+	maxconn			30000
+	default_backend		wc-fb-gsbe-2080
+
+frontend wc-fb-gsvip1-843
+	bind			50.23.65.250:843
+	option			log-separate-errors
+	maxconn			30000
+	default_backend		wc-fb-gsbe-2843
+
+frontend wc-fb-gsvip2-80
+	bind			50.23.65.251:80
+	mode			http
+	option			forwardfor
+	option			httpclose
+	option			httplog
+	option			log-separate-errors
+	maxconn			20000
+	default_backend		wc-fb-gsbe-9080
+
+frontend wc-fb-gsvip2-843
+	bind			50.23.65.251:843
+	option			log-separate-errors
+	maxconn			30000
+	default_backend		wc-fb-gsbe-2843
+
+backend wc-fb-gsbe-2080
+	retries			1
+	timeout			server 10s
+	timeout			connect 5s
+
+	server			gateway1	10.54.231.30:2080 maxconn 7500 weight 100 check
+	server			gateway2	10.54.231.32:2080 maxconn 7500 weight 100 check
+	server			gateway3	10.54.231.26:2080 maxconn 7500 weight 100 check
+	server			gateway4	10.54.231.24:2080 maxconn 7500 weight 100 check
+	server			gateway5	10.54.231.34:2080 maxconn 7500 weight 100 check
+	server			gateway6	10.54.231.28:2080 maxconn 7500 weight 100 check
+
+backend wc-fb-gsbe-2843
+	retries			1
+	timeout			server 10s
+	timeout			connect 5s
+
+	server			gateway1	10.54.231.30:2843 maxconn 7500 weight 100 check
+	server			gateway2	10.54.231.32:2843 maxconn 7500 weight 100 check
+	server			gateway3	10.54.231.26:2843 maxconn 7500 weight 100 check
+	server			gateway4	10.54.231.24:2843 maxconn 7500 weight 100 check
+	server			gateway5	10.54.231.34:2843 maxconn 7500 weight 100 check
+	server			gateway6	10.54.231.28:2843 maxconn 7500 weight 100 check
+
+backend wc-fb-gsbe-9080
+	mode			http
+	option			abortonclose
+	option			forwardfor
+	option			httplog
+	option			http-server-close
+	option			httpchk
+	stats			enable
+	stats			auth admin:[]w015897091ad[]
+	stats			scope .
+
+	retries			1
+	timeout			server 10s
+	timeout			connect 5s
+
+	server			gateway1	10.54.231.30:9080 maxconn 7500 weight 100 check
+	server			gateway2	10.54.231.32:9080 maxconn 7500 weight 100 check
+	server			gateway3	10.54.231.26:9080 maxconn 7500 weight 100 check
+	server			gateway4	10.54.231.24:9080 maxconn 7500 weight 100 check
+	server			gateway5	10.54.231.34:9080 maxconn 7500 weight 100 check
+	server			gateway6	10.54.231.28:9080 maxconn 7500 weight 100 check

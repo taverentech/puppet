@@ -1,0 +1,31 @@
+#!/bin/bash
+
+
+function countup() {
+total=0
+
+# countup [headerstring] [tailstring]
+
+numbercount=`cat /proc/interrupts | grep "$1" | sed -e "s/$1//g" -e "s/$2.+$//g"`
+for i in $numbercount; do
+	let total=$total+$i
+done
+status=`echo "$2" | sed -e 's/ /_/g'`
+printf "$status=${total}c "
+
+}
+printf "OK | "
+
+#countup "NMI:"   "Non-maskable interrupts"
+countup "LOC:"   "Local timer interrupts"
+#countup "SPU:"   "Spurious interrupts"
+#countup "PMI:"   "Performance monitoring interrupts"
+#countup "PND:"   "Performance pending work"
+countup "RES:"   "Rescheduling interrupts"
+countup "CAL:"   "Function call interrupts"
+countup "TLB:"   "TLB shootdowns"
+#countup "TRM:"   "Thermal event interrupts"
+#countup "THR:"   "Threshold APIC interrupts"
+#countup "MCE:"   "Machine check exceptions"
+countup "MCP:"   "Machine check polls"
+printf "\n"

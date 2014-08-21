@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# Version 0.0.1 - May/2012
+#
+# by Jason Legate - jlegate@example.com
+
+sadf=`which sadf 2>/dev/null`
+bc=`which bc 2>/dev/null`
+
+function help {
+echo -e "\n\tThis plugin shows the I/O usage of the specified disk, using the sadf external program.\n\tIt prints three statistics: Transactions per second (tps), Kilobytes per second\n\tread from the disk (KB_read/s) and and written to the disk (KB_written/s)\n\n$0:\n\t-d <disk>\t\tDevice to be checked (without the full path, eg. sda)\n\t-c <tps>,<read>,<wrtn>\tSets the CRITICAL level for tps, KB_read/s and KB_written/s, respectively\n\t-w <tps>,<read>,<wrtn>\tSets the WARNING level for tps, KB_read/s and KB_written/s, respectively\n"
+	exit -1
+}
+
+# Ensuring we have the needed tools:
+( [ ! -f $sadf ] || [ ! -f $bc ] ) && \
+	( echo "ERROR: You must have sadf and bc installed in order to run this plugin" && exit -1 )
+
+# Getting parameters:
+while getopts "d:w:c:h" OPT; do
+	case $OPT in
+		"d") disk=$OPTARG;;
+		"h") help;;
+	esac
+done
+
+# Adjusting the three warn and crit levels:
+crit_tps=`echo $critical | cut -d, -f1`
+crit_read=`echo $critical | cut -d, -f2`
+crit_written=`echo $critical | cut -d, -f3`
+
+warn_tps=`echo $warning | cut -d, -f1`
+warn_read=`echo $warning | cut -d, -f2`
+warn_written=`echo $warning | cut -d, -f3`
+
+
+# Checking parameters:
+[ ! -b "/dev/$disk" ] && echo "ERROR: Device incorrectly specified" && help
+
+# Doing the actual check:
+# sadf -Dh -- -d 300 |grep $(printf "dev%d-%d" $(stat --printf "0x%t" /dev/${disk}) $(stat --printf "0x%T" /dev/${disk})) | tail -n1
+
+# hostname;interval;timestamp;DEV;tps;rd_sec/s;wr_sec/s;avgrq-sz;avgqu-sz;await;svctm;%util
+# wc-fb-db4.sjc.example.com;300;1335830701;dev8-0;30.32;2.24;11080.54;365.56;0.92;30.21;0.46;1.40
+# wc-fb-db4.sjc.example.com;300;1335830701;dev8-16;398.56;38.20;32667.72;82.06;0.45;1.13;0.11;4.43
+
+fields="tps=5 rd_sec/s=6 wr_sec/s=7 avgrq-sz=8 await=9 svctm=10 util=11"
+output=$($sadf -Dh -- -d 300 | grep $(printf "dev%d-%d" $(stat --printf "0x%t" /dev/${disk}) $(stat --printf "0x%T" /dev/${disk})) | tail -n1)
+perfdata=""
+
+for field in ${fields}
+do
+	keyname=$(echo ${field} | cut -f1 -d'=')
+	offset=$(echo ${field} | cut -f2 -d'=')
+	_perfdata=$(echo ${output} | cut -f${offset} -d';')
+
+	case $keyname in
+		tps)
+			tps=$_perfdata
+			;;
+		rd_sec/s)
+			kbread=$(echo "$_perfdata * 0.5" | bc -l)
+			;;
+		wr_sec/s)
+			kbwritten=$(echo "$_perfdata * 0.5" | bc -l)
+			;;
+	esac
+
+	_p=$(printf "%s \"%s\"=%0.2f;" "${perfdata}" "${keyname}" "${_perfdata}")
+	perfdata=${_p}
+done
+
+msg="OK"
+status=0
+
+# Printing the results:
+echo "$msg - I/O stats tps=$tps KB_read/s=$kbread KB_written/s=$kbwritten|${perfdata};"
+
+# Bye!
+exit $status

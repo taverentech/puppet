@@ -1,0 +1,10 @@
+#######################
+## Managed by Puppet ##
+#######################
+Defaults:nagios       !requiretty
+nagios ALL=(ALL) NOPASSWD: /usr/sbin/smartctl
+nagios ALL=(ALL) NOPASSWD: /usr/sbin/tw-cli
+nagios ALL=(ALL) NOPASSWD: /usr/lib/nagios/plugins/check_quota.pl
+nagios ALL=(ALL) NOPASSWD: /usr/lib/nagios/plugins/check_perfstats
+#temp (for backward compat) until we switch them all over
+nagios ALL=(ALL) NOPASSWD: /usr/lib/nagios/plugins/tw_cli

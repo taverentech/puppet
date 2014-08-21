@@ -1,0 +1,10 @@
+configdb=exp-mongo1.stage.i.example.com:27009,exp-mongo2.stage.i.example.com:27009,exp-mongo3.stage.i.example.com:27009
+#chunkSize=64 #default 64
+
+#where to log
+logpath=/var/log/mongodb/mongos.log
+
+logappend=true
+
+#bind_ip = 127.0.0.1
+port = 27017 #default 27017

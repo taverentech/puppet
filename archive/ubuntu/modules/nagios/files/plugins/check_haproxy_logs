@@ -1,0 +1,104 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+usage1="$0 HOSTNAME"
+WP_HEAD="/var/log/remote/`date  +'%Y-%m-%d'`"
+THATHOST=$1
+
+WP_TAIL=`date +'%H00'`
+MYFILE="${WP_HEAD}/${THATHOST}/local0.info-${WP_TAIL}"
+
+if [ ! -e $MYFILE ]; then
+	MYFILE="/var/log/syslog"
+	THATHOST="local"
+fi
+
+function parsedata() {
+
+	# $1 = mysearchvalue
+	return=`cat /tmp/${THATHOST}-syslog.tmp | grep -E "$1" | awk '{ print $1 }' | head -1`
+	if [ ! $return ]; then
+		return=0
+	fi
+}
+function preparedata() {
+	logtail -o /tmp/syslog.offset -f "${MYFILE}" | grep haproxy |  awk '{ print $15 }'| sort | uniq -c | sort -rn > /tmp/${THATHOST}-syslog.tmp
+	parsedata "\----"
+	successful=$return
+	parsedata "CD--"
+	client_disconnect=$return
+	parsedata "cD--"
+	client_timeout=$return
+	parsedata "SH--"
+	server_header_abort=$return
+	parsedata "sH--"
+	server_header_timeout=$return
+	parsedata "sD--"
+	server_data_timeout=$return
+	parsedata "CR--"
+	client_request_abort=$return
+	parsedata "cR--"
+	client_request_timeout=$return
+	parsedata "cL--"
+	client_last_timeout=$return
+	parsedata "PR--"
+	proxy_block=$return
+	logtail -o /tmp/syslog.offset2 -f "${MYFILE}" | grep haproxy |  awk '{ print $12 }'| sort | uniq -c | sort -rn > /tmp/${THATHSOT}-syslog.tmp
+        parsedata "\--"
+        successfulssl=$return
+        parsedata "CD"
+        client_disconnectssl=$return
+        parsedata "cD"
+        client_timeoutssl=$return
+        parsedata "SH"
+        server_header_abortssl=$return
+        parsedata "sH"
+        server_header_timeoutssl=$return
+        parsedata "sD"
+        server_data_timeoutssl=$return
+        parsedata "CR"
+        client_request_abortssl=$return
+        parsedata "cR"
+        client_request_timeoutssl=$return
+        parsedata "cL"
+        client_last_timeoutssl=$return
+        parsedata "PR"
+        proxy_blockssl=$return
+        now=`date '+%s'`
+}
+
+while test -n "$1"; do
+    case "$1" in
+        -h)
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+if [ -e /tmp/check_haproxy.lock ]; then
+	exit 0
+else
+	touch /tmp/check_haproxy.lock
+fi
+
+	preparedata
+        output="see performance data|successful=$successful client_disconnect=$client_disconnect \
+client_timeout=$client_timeout server_header_abort=$server_header_abort \
+server_header_timeout=$server_header_timeout server_data_timeout=$server_data_timeout \
+client_request_abort=$client_request_abort client_request_timeout=$client_request_timeout \
+client_last_timeout=$client_last_timeout proxy_block=$proxy_block \
+successfulssl=$successfulssl client_disconnectssl=$client_disconnectssl \
+client_timeoutssl=$client_timeoutssl server_header_abortssl=$server_header_abortssl \
+server_header_timeoutssl=$server_header_timeoutssl server_data_timeoutssl=$server_data_timeoutssl \
+client_request_abortssl=$client_request_abortssl client_request_timeoutssl=$client_request_timeoutssl \
+client_last_timeoutssl=$client_last_timeoutssl proxy_blockssl=$proxy_blockssl"
+	rm -rf /tmp/check_haproxy.lock
+        status="OK"
+        echo "$status $output"
+        exit $STATE_OK
+

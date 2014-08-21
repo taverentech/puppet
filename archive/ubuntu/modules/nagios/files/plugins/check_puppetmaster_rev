@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#rev=$(svn info /etc/puppet | awk '/^Revision/ { print $2 }')
+rev=$(svn info -R /etc/puppet | awk '/^Revision/ { print $2 }' | sort -un |tail -n1)
+if [ $? != 0 ]
+then
+	echo "-1"
+	exit 0
+fi
+if [ "X${rev}" = "X" ]
+then
+	echo "-2"
+	exit 0
+fi
+echo ${rev}

@@ -1,0 +1,8 @@
+# Managed by Puppet
+
+# Set path
+PATH=/usr/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin
+FACTERLIB=/var/lib/puppet/lib/facter
+
+# Run once every 30m, using offset based off 4th octet of IP/8.25
+<%= @minute1 %>,<%= @minute2 %> * * * * root /usr/sbin/puppetd --onetime --no-daemonize --logdest /var/log/puppet/puppetd.log > /dev/null 2>&1

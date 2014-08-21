@@ -1,0 +1,23 @@
+---
+:backends: yaml
+:yaml:
+  :datadir: /etc/puppet/hiera
+:hierarchy: common
+
+:logger:  # default to syslog
+
+:hierarchy:
+  - hard_constants
+  - "fqdn/%{::fqdn}/server"
+  - "fqdn/%{::fqdn}"
+  - "%{::osfamily}/nodetype/%{::nodetype}"
+  - "%{::osfamily}/domain/%{::domain}/%{::lsbdistcodename}"
+  - "%{::osfamily}/domain/%{::domain}"
+  - "%{::osfamily}/%{::lsbdistcodename}"
+  - "%{::osfamily}/common"
+  - %{calling_module}
+  - common # filename common.yaml
+
+:merge_behavior:
+  - deeper # deep_merge gem on puppetmaster 
+  

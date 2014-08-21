@@ -1,0 +1,9 @@
+#######################
+## Managed by Puppet ##
+#######################
+# Ubuntu sources for precise in SJC1
+deb http://kickstart.sjc1.eng.example1.com/ubuntu/ precise main restricted multiverse universe
+deb http://kickstart.sjc1.eng.example1.com/ubuntu/ precise-updates main restricted multiverse universe
+deb http://kickstart.sjc1.eng.example1.com/ubuntu/ precise-backports main restricted universe multiverse
+deb http://kickstart.sjc1.eng.example1.com/ubuntu/ precise-security main restricted multiverse universe
+deb http://kickstart.sjc1.eng.example1.com/partner/ precise partner

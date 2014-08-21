@@ -1,0 +1,6 @@
+#######################
+## Managed by Puppet ##
+#######################
+
+# hwraid utilities from http://hwraid.le-vert.net/wiki/DebianPackages
+deb [arch=amd64] http://kickstart.sjc1.eng.example1.com/hwraid/ precise main

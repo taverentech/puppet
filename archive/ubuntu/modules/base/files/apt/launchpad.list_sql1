@@ -1,0 +1,4 @@
+#######################
+## Managed by Puppet ##
+#######################
+deb [arch=amd64] http://kickstart.sql1.corp.example1.com/launchpad/pdoes/ppa/ubuntu precise main

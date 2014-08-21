@@ -1,0 +1,13 @@
+<VirtualHost *:80>
+  Servername <=% @fqdn =>
+  ServerAdmin webmaster@localhost
+
+  RewriteEngine On
+  RewriteCond %{REQUEST_URI} ^/(server-info|server-status)
+  RewriteRule . -                                          [last]
+  RewriteCond %{HTTPS} off
+  RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
+
+  ErrorLog /var/log/apache2/jenkins.log
+
+</VirtualHost>

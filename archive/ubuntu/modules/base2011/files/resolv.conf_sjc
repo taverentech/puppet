@@ -1,0 +1,6 @@
+# Managed by Puppet for sjc2
+nameserver 192.168.10.39
+nameserver 174.36.157.66
+nameserver 67.228.14.194
+options timeout:1
+search i.example.com

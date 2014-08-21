@@ -1,0 +1,7 @@
+# Managed by Puppet
+# default for example3.net
+domain example3.net
+nameserver 172.16.1.153
+nameserver 8.8.8.8
+options timeout:1
+search us.example3.net in.example3.net example3.com

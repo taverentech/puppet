@@ -1,0 +1,4 @@
+#######################
+## Managed by Puppet ##
+#######################
+deb [arch=amd64] http://kickstart.sjc1.eng.example1.com/percona/ precise main

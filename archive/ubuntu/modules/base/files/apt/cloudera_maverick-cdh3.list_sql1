@@ -1,0 +1,5 @@
+#######################
+## Created by Puppet ##
+#######################
+# Cloudera
+deb http://kickstart.sql1.corp.example1.com/cloudera/ maverick-cdh3 contrib

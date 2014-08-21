@@ -1,0 +1,26 @@
+global
+log 127.0.0.1 local0
+log 127.0.0.1 local1 notice
+maxconn 4096
+user haproxy
+group haproxy
+ 
+defaults
+log global
+mode tcp
+option dontlognull
+retries 3
+option redispatch
+maxconn 2000
+contimeout 5000
+clitimeout 50000
+srvtimeout 50000
+ 
+listen rabbitmq *:5673
+mode tcp
+balance roundrobin
+option tcpka
+server node1 10.54.72.249:5672 check inter 5000
+server node2 10.54.72.253:5672 check inter 5000
+server node3 10.54.72.247:5672 check inter 5000
+server node4 10.54.72.251:5672 check inter 5000

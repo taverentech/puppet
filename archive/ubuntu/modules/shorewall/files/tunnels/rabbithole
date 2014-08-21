@@ -1,0 +1,8 @@
+##############################################################################
+#                        Managed by Pupppet                                  #
+#                       do not edit by Hand!                                 #
+##############################################################################
+ipsecnat net 174.36.197.42		# DC rabbithole
+ipsecnat net 50.97.213.254		# SJC rabbithole
+ipsecnat net 64.74.130.80		# SJC2 rabbithole
+ipsecnat net 38.110.154.154		# HQ Sonicwall

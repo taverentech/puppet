@@ -1,0 +1,8 @@
+
+conn intra-sjc2
+	right=192.168.10.80
+	rightid=@rabbithole.sjc2.i.example.com
+	rightsubnet=10.0.0.0/8,172.16.0.0/12
+	left=<%= @ipaddress %>
+	type=tunnel
+	auto=start

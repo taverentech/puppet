@@ -1,0 +1,72 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+usage1="$0 -I [interval] -L [logfilename]"
+interval=300
+INTERFACE="nginx"
+HOSTNAME=`hostname -f`
+mysqlpath=`which mysql`
+mysqlopts="-h opsview-db1.sjc.i.example.com -u mysql_stats -pmysql_stats mysql_stats -N -e"
+
+if [ ! -f $mysqlpath ]; then
+        printf "ERROR: mysql binary not in path, exiting."
+        exit 1
+fi
+
+function insert_mysql_record() {
+	result=`$mysqlpath $mysqlopts "insert into stats_nginx(currentdate,checktype,hostname,worker_connections,missingfile,memcache,mysql) values ($now,\"$INTERFACE\",\"$HOSTNAME\",$workers,$missingfile,$memcache,$mysql)"`
+}
+function preparedata() {
+	if [ "$logfilename" == "" ]; then
+		tmp=`ls -1t /var/log/nginx/*.log | grep error | head -1`
+		logfilename=`basename $tmp`
+	fi
+	logtail -o /tmp/nginx.offset -f /var/log/nginx/$logfilename > /tmp/nginx.tmp
+	logtail -o /tmp/php.offset -f /var/log/php/php_errors.log > /tmp/php.tmp
+	workers=`cat /tmp/nginx.tmp | grep "worker_connections are not enough while connecting to upstream" | wc -l`
+	missingfile=`cat /tmp/nginx.tmp | grep -E "No such file" | wc -l`
+	memcache=`cat /tmp/php.tmp | grep memcache | wc -l`
+	mysql=`cat /tmp/php.tmp | grep mysql | wc -l`
+	other=`cat /tmp/php.tmp /tmp/nginx.tmp | grep -vE 'worker_connections|No\ such\ file|memcache|mysql' | wc -l`
+	now=`date '+%s'`
+}
+
+while test -n "$1"; do
+    case "$1" in
+	-L)
+	    logfilename=$2
+	    shift
+	    ;;
+        -I)
+            interval=$2
+            shift
+            ;;
+	-H)
+	    HOSTNAME=$2
+	    shift
+	    ;;
+        -h)
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+
+	preparedata
+	insert_mysql_record
+	let total=$workers+$missingfile+$memcache+$mysql
+        output="$output $total total errors |worker_connections=$workers missingfile=$missingfile memcache_fail=$memcache mysql_fail=$mysql other=$other"
+        status="OK"
+        echo "$status $output"
+        exit $STATE_OK
+

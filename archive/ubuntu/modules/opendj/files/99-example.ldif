@@ -1,0 +1,31 @@
+dn: cn=schema
+objectClass: top
+objectClass: ldapSubentry
+objectClass: subschema
+cn: schema
+attributeTypes: ( 2.25.337864924314873105771727606679889888539.2.3.1
+    NAME 'AnyServiceNowSysID'
+    DESC 'sys_id of a ServiceNow object (32-char lowercase hex representation)'
+    EQUALITY caseExactIA5Match ORDERING caseExactOrderingMatch
+    SUBSTR caseExactIA5SubstringsMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+    SINGLE-VALUE
+    USAGE userApplications )
+attributeTypes: ( 2.25.337864924314873105771727606679889888539.2.3.2
+    NAME 'AnyServiceNowURL'
+    DESC 'Full URL to display a ServiceNow object'
+    EQUALITY caseExactIA5Match ORDERING caseExactOrderingMatch
+    SUBSTR caseExactIA5SubstringsMatch
+    SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+    SINGLE-VALUE
+    USAGE userApplications )
+objectClasses: ( 2.25.337864924314873105771727606679889888539.2.4.1
+    NAME 'AnyServiceNowObject'
+    DESC 'The original ServiceNow object from which this directory entry was derived'
+    SUP top AUXILIARY
+    MUST AnyServiceNowSysID
+    MAY AnyServiceNowURL )
+ds-sync-generation-id: 8408
+modifiersName: cn=admin,cn=Administrators,cn=admin data
+modifyTimestamp: 20120509015805Z
+ds-sync-state: 000001372f514aa14d7300000003

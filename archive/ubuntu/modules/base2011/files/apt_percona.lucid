@@ -1,0 +1,4 @@
+## Percona MySQL sources
+# wiki/display/OP/APT_MySQL
+deb http://repo.percona.com/apt lucid main
+deb-src http://repo.percona.com/apt lucid main

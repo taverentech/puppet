@@ -1,0 +1,5 @@
+[example3-epl]
+name=EPL Extra Packages for Linux CentOS6
+baseurl=http://yum.us.example3.net/epl
+enabled=1
+gpgcheck=0

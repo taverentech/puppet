@@ -1,0 +1,21 @@
+##############################################################################
+#                        Managed by Pupppet                                  #
+#                       do not edit by Hand!                                 #
+##############################################################################
+#SOURCE         DEST            POLICY          LOG LEVEL       LIMIT:BURST
+loc             all             ACCEPT
+vpn		invpn		ACCEPT
+invpn		vpn		ACCEPT
+vpn		loc		ACCEPT
+vpn		$FW		ACCEPT
+$FW             net             ACCEPT
+$FW             loc             ACCEPT
+$FW             all             ACCEPT
+net             $FW             DROP
+net             loc             DROP
+net             all             DROP
+
+# THE FOLLOWING POLICY MUST BE LAST
+all             all             REJECT          info
+#LAST LINE -- ADD YOUR ENTRIES ABOVE THIS LINE -- DO NOT REMOVE
+##############################################################################

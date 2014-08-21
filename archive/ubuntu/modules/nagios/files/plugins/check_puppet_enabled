@@ -1,0 +1,21 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+
+# Test if running with root
+if [ "$(id -u)" != "0" ]; then
+   echo 'WARNING: Not running with root privileges!';
+   exit $STATE_UNKNOWN
+fi
+result=`puppet agent -t --tags verify | grep -c "administratively disabled"`
+
+if [ $result -ne 0 ]; then
+	printf "WARNING: Puppet disabled\n"
+	exit $STATE_WARNING
+else
+	printf "OK: Puppet Enabled\n"
+	exit $STATE_OK
+fi

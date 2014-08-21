@@ -1,0 +1,31 @@
+###################################################################
+#                          MANAGED BY PUPPET                      #
+###################################################################
+# memcached configuration file for example
+
+# run as daemon
+-d
+
+# Log memcached's output to /var/log/memcached
+logfile /var/log/memcached.log
+
+# memcache::memcached_conf { "memory": value => INTEGER; }
+-m <%= @memcache_memory %>
+
+# Default connection port is 11211
+-p 11211
+
+# Run the daemon as root.
+-u memcache
+
+# bind to the internal interface explicitly
+-l <%= @memcache_bindip %>
+
+# Limit the number of simultaneous incoming connections.
+-c 4096
+
+# set memcache threads to match cpu cores
+-t <%= @processorcount %>
+
+# Reserve all memory so other things cannot take it
+-L

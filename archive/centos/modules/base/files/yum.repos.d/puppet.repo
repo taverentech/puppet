@@ -1,0 +1,5 @@
+[example3-puppet]
+name=Puppet Packages for CentOS6
+baseurl=http://yum.us.example3.net/puppet
+enabled=1
+gpgcheck=0

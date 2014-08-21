@@ -1,0 +1,26 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+
+# Test if running with root
+if [ "$(id -u)" != "0" ]; then
+   echo 'WARNING: Not running with root privileges!';
+   exit $STATE_UNKNOWN
+fi
+
+if [ -e /var/lib/puppet/state/puppetdlock ]; then
+	exit 0
+fi
+
+result=`cat /var/lib/puppet/state/last_run_summary.yaml | grep "failure" | awk '{print $2}'`
+
+if [ $result -ne 0 ]; then
+	printf "WARNING: Puppet reports $result failures running|failed=$result\n"
+	exit $STATE_WARNING
+else
+	printf "OK: Puppet reports $result failures running|failed=$result\n"
+	exit $STATE_OK
+fi

@@ -1,0 +1,23 @@
+######################
+## Managed by Puppet #
+######################
+
+#
+# Configuration file to forward syslog messages
+# to the central rsyslog instance (legacy format).
+# Converts the message into JSON format and adds some custom tags.
+#
+
+$ModLoad omrelp
+
+$template TransformMsgToJSON, "<%= @Transform_pri %>%timestamp:::rfc3164% @@@: @cee:{\"@timestamp\":\"%timegenerated:::date-rfc3339%\",\"@version\":\"0.1\",\"timezone\":\"<%= @timezone %>\",\"cluster\":\"<%= @cluster %>\",\"fqdn\":\"<%= @fqdn %>\",\"site\":\"<%= @pop %>\",\"lsbdistcodename\":\"<%= @lsbdistcodename %>\",\"procid\":\"%procid%\",\"hostip\":\"<%= @ipaddress %>\",\"hostname\":\"%hostname%\",\"facility\":\"%syslogfacility-text%\",\"severity\":\"%syslogseverity-text%\",\"severity-num\":\"%syslogseverity%\",\"tag\":\"%syslogtag:::json%\",\"app\":\"%app-name:::json%\",\"message\":\"%msg:::json%\"}"
+
+#
+# Template for forwarded messages in EEC/lumberjack format to
+# the remote rsyslog instance.
+#
+$ActionQueueType LinkedList     # use asynchronous processing
+$ActionQueueFileName srvrfwd    # set file name, also enables disk mode
+$ActionResumeRetryCount -1      # infinite retries on insert failure
+$ActionQueueSaveOnShutdown on   # save in-memory data if rsyslog shuts down
+*.* :omrelp:<%= @relp_server %>:<%= @rsyslog_port %>;TransformMsgToJSON

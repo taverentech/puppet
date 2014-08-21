@@ -1,0 +1,8 @@
+# Managed by Puppet for dc
+nameserver 10.32.6.76
+nameserver 10.32.6.78
+nameserver 10.54.48.12
+nameserver 10.0.80.11
+nameserver 10.0.80.12
+options timeout:1
+search i.example.com

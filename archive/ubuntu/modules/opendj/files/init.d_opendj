@@ -1,0 +1,55 @@
+#!/bin/sh
+###################################################################
+#                  MANAGED BY PUPPET
+###################################################################
+#
+# CDDL HEADER START
+# 
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License, Version 1.0 only
+# (the "License").  You may not use this file except in compliance
+# with the License.
+# 
+# You can obtain a copy of the license at
+# https://OpenDS.dev.java.net/OpenDS.LICENSE.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+# 
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at
+# trunk/opends/resource/legal-notices/OpenDS.LICENSE.  If applicable,
+# add the following below this CDDL HEADER, with the fields enclosed
+# by brackets "[]" replaced with your own identifying information:
+#      Portions Copyright [yyyy] [name of copyright owner]
+# 
+# CDDL HEADER END
+# chkconfig: 345 95 5
+# description: Control the OpenDJ Directory Server
+
+
+# Set the path to the OpenDJ instance to manage
+INSTALL_ROOT="/opt/OpenDJ-2.4.5"
+export INSTALL_ROOT
+
+cd ${INSTALL_ROOT}
+
+# Determine what action should be performed on the server
+case "${1}" in
+start)
+  "${INSTALL_ROOT}/bin/start-ds" --quiet
+  exit ${?}
+  ;;
+stop)
+  "${INSTALL_ROOT}/bin/stop-ds" --quiet
+  exit ${?}
+  ;;
+restart)
+  "${INSTALL_ROOT}/bin/stop-ds" --restart --quiet
+  exit ${?}
+  ;;
+*)
+  echo "Usage:  $0 { start | stop | restart }"
+  exit 1
+  ;;
+esac
+

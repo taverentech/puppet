@@ -1,0 +1,5 @@
+#######################
+## Created by Puppet ##
+#######################
+# Cloudera
+deb http://kickstart.iad1.prod.example1.com/cloudera/ maverick-cdh3u4 contrib

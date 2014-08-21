@@ -1,0 +1,31 @@
+#!/usr/local/bin/php
+<?php
+	define("APPROOT", __DIR__ . "/../www");
+	require_once APPROOT . '/lib/initializer.php';
+
+	// Check ticker status
+	$ret = MapProcessor::checkTickers(60, 120);
+	
+	if (count($ret) == 2) {
+		$statusCode = $ret[0];
+		$msg = $ret[1];
+		
+		if ($statusCode == 0) {
+			print "TICKERS OK - ";
+		} elseif ($statusCode == 1) {
+			print "TICKERS WARNING - ";
+		} else {
+			print "TICKERS CRITICAL - ";
+		}
+		
+		print $ret[1] . "\n";
+		exit($ret[0]);
+	} else {
+		print "Unknown ticker status returned";
+		exit(3);
+	}
+
+?>
+
+
+

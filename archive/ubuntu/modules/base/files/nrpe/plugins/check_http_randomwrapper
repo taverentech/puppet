@@ -1,0 +1,9 @@
+#!/bin/bash
+
+argstring=$*
+check_http=/usr/lib/nagios/plugins/check_http
+
+argstringwithrandom=${argstring//REPLACE/$RANDOM}
+$check_http $argstringwithrandom
+
+exit $?

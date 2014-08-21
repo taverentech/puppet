@@ -1,0 +1,77 @@
+# Managed by Puppet
+# /etc/sudoers
+#
+# NOTE: in puppet SVN repo, edit this file with:
+#	visudo -f modules/base/files/sudoers
+# do you do not push a broken file
+#
+# This file MUST be edited with the 'visudo' command as root.
+#
+# See the man page for details on how to write a sudoers file.
+#
+
+Defaults	env_reset
+
+# Host alias specification
+
+# User alias specification
+
+# Cmnd alias specification
+
+# User privilege specification
+root	ALL=(ALL) NOPASSWD:ALL
+
+# Allow members of group sudo to execute any command after they have
+# provided their password
+# (Note that later entries override this, so you might need to move
+# it further down)
+%sudo ALL=(ALL) NOPASSWD:ALL
+#
+#includedir /etc/sudoers.d
+
+# backuppc user - required to do backup/restore
+backuppc ALL = NOPASSWD: /usr/bin/rsync
+
+# this may be disabled if the backuppc user isn't desired as an emergency back door.
+backuppc ALL=(ALL) NOPASSWD: ALL
+
+# allow nagios to our monitoring scripts - managed by scripts (OLD)
+nagios ALL = NOPASSWD: /usr/src/scripts/common/*
+nagios ALL = NOPASSWD: /usr/src/scripts/bi/common/*
+# allow nagios to our monitoring scripts - managed by puppet (NEW)
+nagios ALL = NOPASSWD: /usr/lib/nagios/plugins/bi/*
+nagios ALL = NOPASSWD: /usr/lib/nagios/plugins/check_*
+# other nagios check
+nagios ALL = NOPASSWD: /usr/local/nagios/bin/install_slave
+
+# allow nagios to query the adaptec raid tool
+nagios ALL=(root) NOPASSWD: /usr/StorMan/arcconf GETCONFIG 1 *
+# allow anagios to query the dell PERC raid
+Defaults:snmp !requiretty
+snmp ALL = NOPASSWD: /usr/lib/nagios/plugins/check_dell_raid.sh
+
+# for QA tools using newer php5.3
+nagios ALL = NOPASSWD: /usr/local/bin/php
+
+# game management - TODO remove this VERY insecure from /home
+www-data ALL=(ALL) NOPASSWD: /home/bmlive/sync.sh
+
+###############################################################################
+# COMMON GAME DEPLOYMENT CMND Aliases
+Cmnd_Alias PUPPET   =/usr/bin/puppet agent -t, /usr/bin/puppet agent -t --tags *
+Cmnd_Alias APACHE2  =/etc/init.d/apache2,/usr/sbin/apache2ctl
+Cmnd_Alias OPENDJ   =/etc/init.d/opendj
+Cmnd_Alias WEBSTACK =/etc/init.d/php-fpm,/etc/init.d/php5-fpm,/etc/init.d/nginx
+###############################################################################
+
+# TOOLs deploy access
+toolsdev   ALL = NOPASSWD: OPENDJ, PUPPET
+toolstest  ALL = NOPASSWD: OPENDJ, PUPPET
+toolsstage ALL = NOPASSWD: OPENDJ, PUPPET
+toolslive  ALL = NOPASSWD: OPENDJ, PUPPET
+
+# Include external rules - NEVER EVER USE THIS BY PAIN OF DEATH
+#includedir /etc/sudoers.d
+# IT IS COMPLETELY BROREN
+
+# END

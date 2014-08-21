@@ -1,0 +1,8 @@
+#################################################
+# Managed by Puppet
+#################################################
+CONF=""
+DATA=/disk1/data/configdb
+LOGFILE=/var/log/mongodb/mongodb-config.log
+MONGO_CONFIGSVR=yes
+PORT=27009

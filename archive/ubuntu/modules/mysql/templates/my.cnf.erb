@@ -1,0 +1,132 @@
+##############################################################################
+#                        Managed by Pupppet                                  #
+#                         do not edit by Hand!                               #
+##############################################################################
+[client]
+port            = 3306
+socket          = /var/run/mysqld/mysqld.sock
+
+[mysqld_safe]
+socket          = /var/run/mysqld/mysqld.sock
+nice            = 0
+open-files-limit = 65535
+
+[mysqld]
+bind-address    = <%= @ipaddress %>
+user            = mysql
+pid-file        = /var/run/mysqld/mysqld.pid
+socket          = /var/run/mysqld/mysqld.sock
+port            = 3306
+basedir         = /usr
+datadir         = /var/lib/mysql
+tmpdir          = /tmp
+lc_messages     = en_US
+lc-messages-dir = /usr/share/mysql/english
+skip-external-locking
+log-bin-trust-function-creators
+# avoid headaches with client
+skip-name-resolve
+max_connect_errors = 999999
+
+#skip-slave-start
+#slave-skip-errors=1062 # NO NO NO - talk to MySQL DBA
+
+table_open_cache=4096
+table_definition_cache=4096
+
+back_log=500 # Percona. mar 7
+
+# changes made to do master - use the last 5 digits of the ip as the server ID :)
+server-id           = <%= @serverid %>
+relay-log           = /var/lib/mysql-logs/mysql-relay-bin
+relay-log-index     = /var/lib/mysql-logs/mysql-relay-bin.index
+log-error           = /var/log/mysql/mysql.err
+master-info-file    = /var/lib/mysql/mysql-master.info
+relay-log-info-file = /var/lib/mysql/mysql-relay-log.info
+datadir             = /var/lib/mysql
+log-bin             = /var/lib/mysql-logs/mysql-bin
+max_binlog_size     = 1000M
+binlog_ignore_db    = mysql
+expire_logs_days    = 4
+log-warnings       = 0
+log-slave-updates
+
+binlog_ignore_db    = mysql
+replicate-wild-ignore-table = mysql.%
+
+key_buffer_size         = 64M
+thread_cache_size       = 256
+query_cache_type        = 0
+query_cache_size        = 0
+
+# percona recommended Sept 2011
+table_open_cache=128
+tmp_table_size=268435456
+max_heap_table_size=268435456
+
+# end
+# per thread settings
+max_allowed_packet      = 32M
+max_connections         = 2000 # max live is 707, this gives enough buffer
+sort_buffer_size        = 2M
+read_buffer_size        = 2M
+read_rnd_buffer_size    = 8M
+myisam_sort_buffer_size = 2M
+
+# 2 * #procs
+thread_concurrency      = <%= @thread_concurrency %>
+
+slow-query-log                  = 1
+slow-query-log-file             = /var/log/mysql/mysql-slow.log
+long_query_time                 = 5
+log-queries-not-using-indexes   = OFF
+
+# Percona feature for fast checksumming
+innodb_fast_checksum            = 1
+innodb_data_home_dir            = /var/lib/mysql
+innodb_data_file_path           = ibdata1:10M:autoextend
+innodb_log_group_home_dir       = /var/lib/mysql
+
+# set to 65% of total RAM for example by default
+innodb_buffer_pool_size         = <%= @memory65 %>
+innodb_additional_mem_pool_size = 40M
+innodb_log_file_size            = 1024M
+innodb_log_buffer_size          = 20M
+innodb_flush_log_at_trx_commit  = 2
+innodb_lock_wait_timeout        = 50
+
+innodb_thread_concurrency  = 0
+innodb_commit_concurrency  = 0
+
+innodb_io_capacity              = 1000
+innodb_ibuf_accel_rate    = 250
+innodb_file_per_table
+innodb_flush_method             = O_DIRECT
+
+innodb_buffer_pool_restore_at_startup = 300
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet      = 32M
+
+[mysql]
+#no-auto-rehash # faster start of mysql but no tab completition
+
+[isamchk]
+key_buffer              = 16M
+
+#
+# * IMPORTANT: Additional settings that can override those from this file!
+#   The files must end with '.cnf', otherwise they'll be ignored.
+#
+[myisamchk]
+key_buffer_size = 256M
+sort_buffer_size = 256M
+read_buffer = 2M
+write_buffer = 2M
+
+[mysqlhotcopy]
+interactive-timeout
+
+!includedir /etc/mysql/conf.d/

@@ -1,0 +1,4 @@
+CONF=/etc/mongodb.conf
+DATA=/disk1/data/exrs_1
+LOGFILE=/var/log/mongodb/mongodb-exrs_1.log
+PORT=27001

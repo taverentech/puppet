@@ -1,0 +1,26 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+usage1="USAGE: $0"
+
+IPTABLES="C`/sbin/iptables -nvL |grep -c dpt:22`"
+
+if [ "${IPTABLES}" != "C" ]; then
+	IPTABLES=`echo ${IPTABLES} | sed -e 's/C//g'`
+else
+	IPTABLES="0"
+fi
+
+if [ "${IPTABLES}" == "0" ]; then
+	STATE="ERROR: Firewall disabled"
+	STATE_EXIT="${STATE_CRITICAL}"
+else
+	STATE="OK: FIREWALL ACTIVE"
+	STATE_EXIT="${STATE_OK}"
+fi
+
+echo "${STATE}"
+exit "${STATE_EXIT}"

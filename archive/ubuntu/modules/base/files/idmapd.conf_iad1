@@ -1,0 +1,15 @@
+#######################
+## Managed by Puppet ##
+#######################
+[General]
+
+Verbosity = 0
+Pipefs-Directory = /run/rpc_pipefs
+# set your own domain here, if id differs from FQDN minus hostname
+# Domain = localdomain
+Domain = iad1.prod.example1.com
+
+[Mapping]
+
+Nobody-User = nobody
+Nobody-Group = nogroup

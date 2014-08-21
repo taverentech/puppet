@@ -1,0 +1,35 @@
+<VirtualHost *:443>
+  ServerAdmin webmaster@localhost
+  Servername <=% @fqdn =>
+
+  ProxyRequests     Off
+  # Local reverse proxy authorization override
+  # Most unix distribution deny proxy by default (ie /etc/apache2/mods-enabled/proxy.conf in Ubuntu)
+  #<Proxy http://localhost:8080/jenkins*>
+  <Proxy http://localhost:8080/*>
+    Order deny,allow
+    Allow from all
+  </Proxy>
+  #ProxyPass         /jenkins  http://localhost:8080/jenkins
+  #ProxyPassReverse  /jenkins  http://localhost:8080/jenkins
+  ProxyPass         /  http://localhost:8080/
+  ProxyPassReverse  /  http://localhost:8080/
+
+  #   SSL Engine Switch:
+  #   Enable/Disable SSL for this virtual host.
+  SSLEngine on
+  SSLCertificateFile    /etc/ssl/example/star_<=% @pop =>_thedot_com.pem
+  SSLCertificateKeyFile /etc/ssl/example/star_<=% @pop =>_thedot_com.key
+
+  <FilesMatch "\.(cgi|shtml|phtml|php)$">
+    SSLOptions +StdEnvVars
+  </FilesMatch>
+  <Directory /usr/lib/cgi-bin>
+    SSLOptions +StdEnvVars
+  </Directory>
+
+  BrowserMatch ".*MSIE.*" \
+  nokeepalive ssl-unclean-shutdown \
+  downgrade-1.0 force-response-1.0
+
+</VirtualHost>

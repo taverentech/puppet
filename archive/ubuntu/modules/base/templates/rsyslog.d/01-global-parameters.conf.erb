@@ -1,0 +1,17 @@
+######################
+## Managed by Puppet #
+######################
+#
+# Global parameters to complement those from /etc/rsyslog.conf
+#
+#   client  server      Param
+#   --------------------------------------
+#       16      32      WorkerThreads
+#      256     512      WorkerThreadMinMsgs
+#       64     512      DequeueBatchSize
+#
+$MainMsgQueueSaveOnShutdown on
+$MainMsgQueueWorkerThreadMinimumMessages <%= @MMQWorkerThreadMinMsgs %>
+$MainMsgQueueWorkerThreads <%= @MMQWorkerThreads %>
+$MainMsgQueueWorkerTimeoutThreadShutdown -1
+$MainMsgQueueDequeueBatchSize <%= @MMQDequeueBatchSize %>

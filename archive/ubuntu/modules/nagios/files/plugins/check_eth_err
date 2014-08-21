@@ -1,0 +1,47 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+HOSTNAME=`hostname -f`
+usage1="$0 -i [interface]"
+interval=300
+INTERFACE=eth0
+
+
+function preparedata() {
+	values=`cat /proc/net/dev | grep $INTERFACE | sed -e 's/:/ /g' | awk '{print $4 " "$12}'`
+	if [ ${#values} -eq 0 ]; then
+		echo $usage1
+		exit $STATE_UNKNOWN
+	fi
+	rx=`echo $values | awk '{print $1}'`;
+	tx=`echo $values | awk '{print $2}'`;
+	now=`date '+%s'`
+}
+while test -n "$1"; do
+    case "$1" in
+        -i)
+            INTERFACE=$2
+            shift
+            ;;
+        -h)
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+preparedata
+output="$output rx=${rx} tx=${tx} |rx=${rx}c tx=${tx}c"
+status="OK"
+echo "$status $output"
+exit $STATE_OK
+

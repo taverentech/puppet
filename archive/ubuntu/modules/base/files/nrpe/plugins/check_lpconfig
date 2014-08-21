@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# Nagios script to verify LPG health state based on full XML file with a configurable number of live gateways
+#
+
+HELPMSG="check_lpconfig -c CRIT -w WARN \n where CRIT|WARN is the number of available gateway servers"
+
+while getopts s:p:c:w:h OPT; do
+  case "$OPT" in
+    s)
+	SERVER=$OPTARG
+	;;
+    p)
+	PORT=$OPTARG
+	;;
+    c)
+	CRIT=$OPTARG
+	;;
+    w)
+	WARN=$OPTARG
+	;;
+    h)
+	echo $HELPMSG
+	exit 0
+	;;
+    *)
+	echo $HELPMSG
+	exit 127
+	;;
+  esac
+done
+
+if [ x$SERVER == x ] || [ x$CRIT == x ] || [ x$WARN == x ] || [ -z $PORT ]
+then
+  echo "Missing a required arguement!  Exiting!"
+  echo $HELPMSG
+  exit 127
+fi
+
+TIME=`date +%s`
+TEMPFILE=/tmp/$SERVER.$TIME
+
+wget -O $TEMPFILE --tries 1 --timeout 3 $SERVER:$PORT/lpconfig/cfg/c3.customerName=c3.Demo >/dev/null 2>&1
+
+#Run our checks
+#Check #1 is the full XML page returned?
+
+XMLCHECK=`grep "</livePassConfig>" $TEMPFILE`
+
+if [ x$XMLCHECK == x ]
+then
+  echo "CRITICAL: Missing end of XML document or unable to get a response"
+  rm $TEMPFILE
+  exit 2
+fi
+
+TOTALGWS=`grep "<gateway protocolVersion" $TEMPFILE | wc -l`
+AVAILGWS=`grep "<gateway protocolVersion" $TEMPFILE | grep available | wc -l`
+DEADGWS=`grep "<gateway protocolVersion" $TEMPFILE | grep -v available | wc -l`
+
+if [ $AVAILGWS -le $CRIT ]
+then
+  echo "CRITICAL: $AVAILGWS live gateways (critical threshold is $CRIT)"
+  rm $TEMPFILE
+  exit 2
+elif [ $AVAILGWS -le $WARN ]
+then
+  echo "WARNING: $AVAILGWS live gateways (warning threshold is $WARN)"
+  rm $TEMPFILE
+  exit 1
+else
+  echo "OK: $AVAILGWS live gateways"
+  rm $TEMPFILE
+  exit 0
+fi
+# we should never get here
+exit 127

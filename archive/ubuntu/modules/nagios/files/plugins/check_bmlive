@@ -1,0 +1,101 @@
+#!/bin/bash
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+STATE_DEPENDENT=4
+user="root"
+pass="[]w015897091ro[]"
+mysqlpath=`which mysql`
+exitstatus=$STATE_WARNING #default
+usage1="Usage: $0 -u user -p password [-w <warn>] [-c <crit>]"
+crit="30"
+warn="20"
+
+
+if [ ! -f $mysqlpath ]; then
+        printf "ERROR: mysql binary not in path, exiting."
+        exit 1
+fi
+
+function check_errors () {
+
+if [ "$crit" == "none" ]; then
+        let crit=3*3
+fi
+if [ "$warn" == "none" ]; then
+        let warn=1*3
+fi
+
+alerts=`$mysqlpath -u $user -p$pass bm_live -e "SELECT COUNT(id) count FROM stats_httperrors WHERE addtime > UNIX_TIMESTAMP(NOW())-(60*5)" | sed -e '/count/d'`
+# on the number line, we need to test 6 cases:
+# 0-----w-----c----->
+# 0, 0<lag<w, w, w<lag<c, c, c<lag
+# which we simplify to
+# lag>=c, w<=lag<c, 0<=lag<warn
+
+#echo -$alerts- : -$crit- : $warn
+#w<=lag<c
+if [ $alerts -lt $crit ]; then
+if [ $alerts -ge $warn ]; then
+echo "WARNING - Alerts within the last 5 minutes:  $alerts|clientalerts=$alerts"
+exit $STATE_WARNING;
+fi
+fi
+
+if [ $alerts -ge $crit ]; then
+echo "CRITICAL - Alerts within the last 5 minutes:  $alerts|clientalerts=$alerts"
+exit $STATE_CRITICAL;
+fi
+
+# 0<=lag<warn
+if [ $alerts -lt $warn ]; then
+echo "OK - Alerts within the last 5 minutes:  $alerts|clientalerts=$alerts"
+exit $STATE_OK;
+fi
+
+}
+while test -n "$1"; do
+    case "$1" in
+        -c)
+            crit=$2
+            shift
+            ;;
+        -w)
+            warn=$2
+            shift
+            ;;
+        -u)
+            user=$2
+            shift
+            ;;
+        -p)
+            pass=$2
+            shift
+            ;;
+        -h)
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+        -H)
+            host=$2
+            shift
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            echo $usage1;
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+    shift
+done
+
+function purgelogs() {
+
+        alerts=`$mysqlpath -h 10.32.6.112 -u $user -p$pass bm_live -e "DELETE FROM stats_httperrors WHERE addtime < UNIX_TIMESTAMP(NOW())-(60*60*48)"`
+
+}
+
+check_errors
+purgelogs
+

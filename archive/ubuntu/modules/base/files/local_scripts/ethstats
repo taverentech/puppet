@@ -1,0 +1,141 @@
+#!/usr/bin/perl
+
+# I received this without copyright, but have since been told by the owner
+# that it is released into the public domain.
+#
+# Any changes I make are released into the public domain.
+# - M. Drew Streib <dtype@dtype.org>
+
+$COLOR = 1;
+$clear = `clear`;
+
+my $version = `uname -s -r`; chomp($version);
+my $hostname = `uname -n`;   chomp($hostname);
+
+#uncomment this and set $COLOR = 1 if you have the right Perl module
+#
+if ($COLOR) {
+        use Term::ANSIColor;
+}
+
+$| = 1;
+
+#$period = 10;
+$period = 1;
+
+#Inter-|   Receive                                                |  Transmit
+# face |bytes    packets errs drop fifo frame compressed multicast|bytes packets errs drop fifo colls carrier compressed
+#    lo:    2356      32    0    0    0     0          0         0     2356      32    0    0    0     0       0          0
+#  eth0: 1217210    9400    0    0    0     8          0        11  1207648    8019    0    0    0     0       0          0
+#  eth1: 2039952   21982    6    0    0     6          0         0 47000710   34813    0    0    0   821       0          0
+
+$addtime = 1 if($ARGV[0] eq "-t");
+
+$op = $period;
+$period = 1;
+convert();
+sleep $period;
+
+# print header
+print "$version ($hostname)\n";
+
+while(1) {
+  print "$clear";
+  convert();
+  print "\n".localtime()."\n" if($addtime==1);
+if ($numdevs > 1) {
+        if ($COLOR) { print color 'yellow'; }
+    printf "total: %7.2f Mb/s In  %7.2f Mb/s Out", $tkbin, $tkbout;
+    printf " - %8.1f p/s In  %8.1f p/s Out", $tpackin, $tpackout;
+        if ($COLOR) { print color 'reset'; }
+        print "\n";
+
+  }
+  foreach $dev(sort keys %kbin) {
+    printf "%5s: %7.2f Mb/s In  %7.2f Mb/s Out",$dev, $kbin{$dev}, $kbout{$dev};
+    printf " - %8.1f p/s In  %8.1f p/s Out", $packin{$dev}, $packout{$dev};
+    printf " - %8.1f d/s In  %8.1f d/s Out", $dropsin{$dev}, $dropsout{$dev};
+        print "\n";
+  }
+  $period = $op;
+  sleep $period;
+}
+
+sub convert {
+  open(IN, "/proc/net/dev") || die("Can't open ip_acct: $!\n");
+  <IN>; <IN>;
+  while($l = <IN>) {
+    chop($l);
+    ($dev, $rest) = split(/:/, $l);
+    $dev  =~ s/\s//g;
+    $rest =~ s/^\s+//;
+    @devarr = split(/\s+/, $rest);
+    $bytesin{$dev} = @devarr[0]; $bytesout{$dev} = @devarr[8];
+        $packin{$dev} = @devarr[1]; $packout{$dev} = @devarr[9];
+        $dropsin{$dev} = @devarr[3]; $dropsout{$dev} = @devarr[11];
+
+  }
+  close(IN);
+
+  $numdevs = 0;
+  $tpackin = 0;
+  $tpackout = 0;
+  $tkbin = 0;
+  $tkbout = 0;
+
+  foreach $dev(sort keys %bytesin) {
+    next if($dev eq "lo");
+    $numdevs++;
+        # packets in/out
+    $packdiffin          = ($packin{$dev}  - $opackin{$dev});
+    $packdiffout         = ($packout{$dev} - $opackout{$dev});
+    $packdiffin         += 4294967296   if($packdiffin<0);
+    $packdiffout        += 4294967296   if($packdiffout<0);
+    $opackin{$dev}  = $packin{$dev};
+    $opackout{$dev} = $packout{$dev};
+    $packin{$dev}      = $packdiffin  / $period;
+    $packout{$dev}     = $packdiffout / $period;
+
+        # bytes in/out
+    $diffin          = ($bytesin{$dev}  - $obytesin{$dev});
+    $diffout         = ($bytesout{$dev} - $obytesout{$dev});
+    $diffin         += 4294967296       if($diffin<0);
+    $diffout        += 4294967296       if($diffout<0);
+    $obytesin{$dev}  = $bytesin{$dev};
+    $obytesout{$dev} = $bytesout{$dev};
+    $kbin{$dev}      = $diffin  / $period / 1000000 * 8;
+    $kbout{$dev}     = $diffout / $period / 1000000 * 8;
+
+    $dropdiffin      = ($dropsin{$dev} - $odropsin{$dev});
+    $dropdiffout     = ($dropsout{$dev} - $odropsout{$dev});
+    $dropdiffin     += 4294967296       if($dropdiffin<0);
+    $dropdiffout    += 4294967296       if($dropdiffout<0);
+    $odropsin{$dev}  = $dropsin{$dev};
+    $odropsout{$dev} = $dropsout{$dev};
+    $dropsin{$dev}  = $dropdiffin / $period;
+    $dropsout{$dev} = $dropdiffout / $period;
+
+        # increment totals
+        $tpackin += $packin{$dev};
+        $tpackout += $packout{$dev};
+        $tkbin += $kbin{$dev};
+        $tkbout += $kbout{$dev};
+  }
+}
+
+sub tquad {
+  $n = shift;
+  my $a = ($n & 0xff000000) >> 24;
+  my $b = ($n & 0x00ff0000) >> 16;
+  my $c = ($n & 0x0000ff00) >> 8;
+  my $d = $n & 0x000000ff;
+  return "$a.$b.$c.$d";
+}
+
+sub toquad {
+  $h = shift;
+  $h =~ /(\S\S)(\S\S)(\S\S)(\S\S)/;
+  $a = $1; $b = $2; $c = $3; $d = $4;
+  return sprintf("%d.%d.%d.%d", "0x$a", "0x$b", "0x$c", "0x$d");
+}
+

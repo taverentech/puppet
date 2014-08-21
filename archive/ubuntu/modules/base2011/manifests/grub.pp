@@ -1,0 +1,50 @@
+################################################################
+# grub class
+
+class grub {
+  notify{"class grub": }
+
+  #require pkg grub-pc
+  package { "grub-pc":
+    ensure     => latest,
+  }
+
+  # nested class/define
+  define conf ( $value ) {
+
+    # $name is provided by define invocation
+
+    # guid of this entry
+    $key = $name
+
+    $context = "/files/etc/default/grub"
+
+    augeas { "default_grub/$key":
+      context => $context,
+      onlyif  => "get $key != '$value'",
+      changes => "set $key '$value'",
+      notify  => Exec["grub"],
+    }
+
+  } 
+
+  file { "default_grub":
+    path => $operatingsystem ? {
+      default => "/etc/default/grub",
+    },
+    require => Package["grub-pc"],
+  }
+
+  exec { "update-grub2":
+    alias => "grub",
+    refreshonly => true,
+    subscribe => File["default_grub"],
+    require => Package["grub-pc"],
+  }
+
+  ####################################################################
+  # DEFAULT GRUB configurations
+
+  grub::conf { "GRUB_TIMEOUT": value => "10"; }
+
+}

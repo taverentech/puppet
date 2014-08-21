@@ -1,0 +1,16 @@
+config setup
+	crlcheckinterval=100
+	strictcrlpolicy=no
+	plutostart=no
+
+conn %default
+	ikelifetime=60m
+	keylife=20m
+	rekeymargin=3m
+	keyingtries=%forever
+	dpdaction=restart
+	dpddelay=15
+	keyexchange=ikev2
+	authby=secret
+
+include /etc/ipsec.d/ex/<%= @pop %>.example.com.conf

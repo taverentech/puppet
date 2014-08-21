@@ -1,0 +1,8 @@
+
+conn intra-dc
+	right=10.24.6.2
+	rightid=@rabbithole.dc.i.example.com
+	rightsubnet=172.16.0.0/12,192.168.0.0/16
+	left=<%= @ipaddress %>
+	type=tunnel
+	auto=start

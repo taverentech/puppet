@@ -1,0 +1,16 @@
+#######################
+## Managed by Puppet ##
+#######################
+driftfile /var/lib/ntp/ntp.drift
+
+# Servers
+# admin1.iad1.prod
+server 10.0.1.21
+# admin2.iad1.prod
+server 10.0.1.22
+
+# Restrictions: deny all non-local requests
+restrict -4 default kod nomodify notrap nopeer
+restrict -6 default kod nomodify notrap nopeer
+restrict -4 127.0.0.1
+restrict -6 ::1
