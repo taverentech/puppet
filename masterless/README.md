@@ -32,8 +32,19 @@ NOTE: --pluginsync will not work.   You will need to copy facter files to
 Usage
 
 cd /directory/to/puppet/stuff
-./scripts/masterless-wrapper.sh CLASSNAME {option}
+sudo ./scripts/masterless-wrapper.sh CLASSNAME {option}
 
 Examples
 
-./scripts/masterless-wrapper.sh example {option}
+# Run module
+sudo ./scripts/masterless-wrapper.sh example
+
+# Run module with debug
+sudo ./scripts/masterless-wrapper.sh example -d
+
+# Script takes one arg, you can pass many in quotes
+sudo ./scripts/masterless-wrapper.sh example '-d --noop'
+
+# Run a single manifest
+sudo ./scripts/masterless-wrapper.sh example::facts_profile
+

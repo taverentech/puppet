@@ -15,10 +15,9 @@ class example (
 
   ##FILES
   file { 'example_file':
-    ensure  => present,
     path   => "$expath/example_file",
     source => "puppet:///modules/example/example",
-    mode    => '0644',
+    mode   => '0644',
     backup => ".$::timestamp",
   }
 
@@ -30,9 +29,9 @@ class example (
     backup => ".$::timestamp",
   }
 
-  exec { "install_example_file_via_exec":
+  exec { "install_example_via_exec":
     command => 'echo "example" > /tmp/example_exec',
-    unless => 'grep -c ^example /tmp/example_exec',
+    creates => "/tmp/example_exec",
   }
 
 } # end of class
