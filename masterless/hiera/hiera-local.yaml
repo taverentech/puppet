@@ -1,3 +1,6 @@
+################################################################
+#(@) Joe DeCello, 2012
+################################################################
 #THIS FILE USED or MASTERLESS PUPPET - see datadir setting
 :backends:
  - yaml

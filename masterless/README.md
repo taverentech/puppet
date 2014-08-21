@@ -1,3 +1,7 @@
+################################################################
+#(@) Joe DeCello, 2012
+################################################################
+
 There are two very clear use cases for this wrapper script:
 1. You want to test your puppet code from ./ without publishing to master
 2. You do not use puppetmasters and need to run your code from ./ normally
@@ -22,6 +26,8 @@ If you have a brain and are using hiera, just need to make sure that line
 points at your hiera config.   The only diff between puppetmaser and master-
 less is that :datadir: ./hiera, may be different.
 
+NOTE: --pluginsync will not work.   You will need to copy facter files to 
+/var/lib/puppet/lib/facter  (see modules/example/manifests/facts_profile.pp)
 
 Usage
 
