@@ -8,7 +8,7 @@
 # WARNING - THIS MODULE MAY DESTROY DATA - use knowingly
 #
 #  Use hiera-able parameter for list of datadir block devices
-class setup_datafs (
+class setup_jbod (
   $datadevices='sdX,sdY,sdZ',
   $debug=true,
 ) {
