@@ -14,8 +14,8 @@ if [ ! -d $PUPDIR ]; then
   exit 1
 fi
 cd $PUDIR || exit 1
-# Enable agent and remove lockfile
-puppet agent --enable
+# Disable agent
+puppet agent --disable
 # Run agent puppetmasterless
 puppet apply -v $OPTIONS \
  --modulepath=./modules \
