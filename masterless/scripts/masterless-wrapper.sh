@@ -8,7 +8,7 @@ if [ -z $CLASS ]; then
   echo "Usage: $0 classname"
   exit 1
 fi
-# Enable agent and remove lockfile
+# Disable agent
 puppet agent --disable
 # Run agent puppetmasterless
 puppet apply -v $OPTIONS \
