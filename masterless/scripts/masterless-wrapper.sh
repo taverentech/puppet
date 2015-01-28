@@ -9,7 +9,7 @@ if [ -z $CLASS ]; then
   exit 1
 fi
 # Enable agent and remove lockfile
-puppet agent --enable
+puppet agent --disable
 # Run agent puppetmasterless
 puppet apply -v $OPTIONS \
  --modulepath=./modules \
