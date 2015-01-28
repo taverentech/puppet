@@ -1,7 +1,7 @@
 ##############################################################################
 #(@) Joe DeCello, 2014
 ##############################################################################
-# 2011 - wrote first version to for client to deploy apps on appliances
+# 2011 - wrote first version for client to deploy apps on appliances
 # 2014 - updated for masterless architecture and hiera
 
 There are two very clear use cases for this wrapper script:
